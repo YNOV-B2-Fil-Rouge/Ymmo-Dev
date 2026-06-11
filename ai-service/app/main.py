@@ -6,7 +6,7 @@ zones). The Go API or the front-end call it over HTTP.
 """
 from fastapi import FastAPI
 
-from .routers import analytics, health
+from .routers import analytics, health, predictions
 
 app = FastAPI(
     title="Ymmo Data/AI Service",
@@ -16,3 +16,4 @@ app = FastAPI(
 
 app.include_router(health.router)
 app.include_router(analytics.router)
+app.include_router(predictions.router)
