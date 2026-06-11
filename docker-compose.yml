@@ -1,0 +1,52 @@
+# Ymmo — full stack in containers.
+# Launch everything with:  docker compose up --build
+# Override any value by creating a .env file next to this file (see .env.example).
+
+services:
+  # ---------- MariaDB ----------
+  db:
+    image: mariadb:11.4
+    container_name: ymmo-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootpass}
+      MARIADB_DATABASE: ${DB_NAME:-ymmo}
+      MARIADB_USER: ${DB_USER:-ymmo_user}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-ymmo_pass}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      # schema.sql runs automatically on first startup (empty data volume).
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  # ---------- Go API ----------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ymmo-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy   # API starts only once the DB is ready
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      APP_PORT: "8080"
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      DB_HOST: db                     # service name on the compose network
+      DB_PORT: "3306"
+      DB_USER: ${DB_USER:-ymmo_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ymmo_pass}
+      DB_NAME: ${DB_NAME:-ymmo}
+    ports:
+      - "8080:8080"
+
+volumes:
+  db_data:

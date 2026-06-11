@@ -1,0 +1,19 @@
+# Secrets / environment
+.env
+**/.env
+
+# Go build artifacts
+backend/bin/
+backend/ymmo-api
+*.exe
+*.test
+*.out
+
+# Dependencies
+vendor/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

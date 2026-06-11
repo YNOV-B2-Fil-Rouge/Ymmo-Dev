@@ -1,0 +1,16 @@
+# Environment / secrets
+.env
+
+# Build output
+/bin/
+ymmo-api
+*.exe
+
+# Go
+*.test
+*.out
+vendor/
+
+# IDE
+.idea/
+.vscode/
