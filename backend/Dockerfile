@@ -11,8 +11,14 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the source and build.
+# Copy the rest of the source.
 COPY . .
+
+# Generate the Swagger/OpenAPI docs package (ymmo/docs) at build time, so the
+# image is self-contained and `docker compose up` needs no manual step.
+RUN go install github.com/swaggo/swag/cmd/swag@v1.16.4
+RUN swag init -g cmd/api/main.go -o docs
+
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /ymmo-api ./cmd/api
 
 # ---------- Stage 2: runtime ----------
