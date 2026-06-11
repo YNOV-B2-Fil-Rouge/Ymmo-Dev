@@ -52,6 +52,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	authService := services.NewAuthService(userRepo, roleRepo, cfg.JWTSecret)
 	authHandler := handlers.NewAuthHandler(authService)
 
+	propertyRepo := repositories.NewPropertyRepository(db)
+	propertyService := services.NewPropertyService(propertyRepo)
+	propertyHandler := handlers.NewPropertyHandler(propertyService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
@@ -65,6 +69,25 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			auth.POST("/login", authHandler.Login)
 			// Protected: requires a valid Bearer token.
 			auth.GET("/me", middleware.Auth(cfg.JWTSecret), authHandler.Me)
+		}
+
+		properties := api.Group("/properties")
+		{
+			// Public catalogue: browse and view.
+			properties.GET("", propertyHandler.List)
+			properties.GET("/:id", propertyHandler.Get)
+
+			// Management: staff only (valid token + internal role).
+			staff := properties.Group("")
+			staff.Use(
+				middleware.Auth(cfg.JWTSecret),
+				middleware.RequireRole("AGENT", "DIRECTOR", "HQ"),
+			)
+			{
+				staff.POST("", propertyHandler.Create)
+				staff.PUT("/:id", propertyHandler.Update)
+				staff.DELETE("/:id", propertyHandler.Delete)
+			}
 		}
 	}
 
