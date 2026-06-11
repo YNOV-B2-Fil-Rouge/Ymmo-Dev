@@ -81,6 +81,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	visitService := services.NewVisitService(visitRepo, propertyRepo)
 	visitHandler := handlers.NewVisitHandler(visitService)
 
+	meetingRepo := repositories.NewMeetingRepository(db)
+	meetingService := services.NewMeetingService(meetingRepo)
+	meetingHandler := handlers.NewMeetingHandler(meetingService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
@@ -146,6 +150,21 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		{
 			visits.GET("/visits", visitHandler.List)
 			visits.PATCH("/visits/:id", visitHandler.UpdateStatus)
+		}
+
+		// Meetings: internal. Listing/deleting is for the user's own meetings;
+		// creating is staff only.
+		meetings := api.Group("/meetings")
+		meetings.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			meetings.GET("", meetingHandler.List)
+			meetings.DELETE("/:id", meetingHandler.Delete)
+
+			staffMeetings := meetings.Group("")
+			staffMeetings.Use(middleware.RequireRole("AGENT", "DIRECTOR", "HQ"))
+			{
+				staffMeetings.POST("", meetingHandler.Create)
+			}
 		}
 	}
 
