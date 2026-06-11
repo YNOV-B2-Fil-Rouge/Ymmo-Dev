@@ -89,6 +89,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	alertService := services.NewAlertService(alertRepo)
 	alertHandler := handlers.NewAlertHandler(alertService)
 
+	saleRepo := repositories.NewSaleRepository(db)
+	saleService := services.NewSaleService(saleRepo, propertyRepo, userRepo)
+	saleHandler := handlers.NewSaleHandler(saleService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
@@ -178,6 +182,21 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			alerts.POST("", alertHandler.Create)
 			alerts.GET("", alertHandler.List)
 			alerts.DELETE("/:id", alertHandler.Delete)
+		}
+
+		// Sale files: participants can read; only staff create/advance them.
+		sales := api.Group("/sales")
+		sales.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			sales.GET("", saleHandler.List)
+			sales.GET("/:id", saleHandler.Get)
+
+			staffSales := sales.Group("")
+			staffSales.Use(middleware.RequireRole("AGENT", "DIRECTOR", "HQ"))
+			{
+				staffSales.POST("", saleHandler.Create)
+				staffSales.PATCH("/:id", saleHandler.Update)
+			}
 		}
 	}
 
