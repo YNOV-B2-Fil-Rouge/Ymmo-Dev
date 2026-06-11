@@ -85,6 +85,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	meetingService := services.NewMeetingService(meetingRepo)
 	meetingHandler := handlers.NewMeetingHandler(meetingService)
 
+	alertRepo := repositories.NewAlertRepository(db)
+	alertService := services.NewAlertService(alertRepo)
+	alertHandler := handlers.NewAlertHandler(alertService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
@@ -165,6 +169,15 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			{
 				staffMeetings.POST("", meetingHandler.Create)
 			}
+		}
+
+		// Search alerts: any authenticated user manages their own.
+		alerts := api.Group("/alerts")
+		alerts.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			alerts.POST("", alertHandler.Create)
+			alerts.GET("", alertHandler.List)
+			alerts.DELETE("/:id", alertHandler.Delete)
 		}
 	}
 
