@@ -69,6 +69,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	favoriteService := services.NewFavoriteService(favoriteRepo, propertyRepo)
 	favoriteHandler := handlers.NewFavoriteHandler(favoriteService)
 
+	photoRepo := repositories.NewPhotoRepository(db)
+	photoService := services.NewPhotoService(photoRepo, propertyRepo)
+	photoHandler := handlers.NewPhotoHandler(photoService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
@@ -104,6 +108,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 				staff.POST("", propertyHandler.Create)
 				staff.PUT("/:id", propertyHandler.Update)
 				staff.DELETE("/:id", propertyHandler.Delete)
+
+				// Photo management for a property.
+				staff.POST("/:id/photos", photoHandler.Add)
+				staff.DELETE("/:id/photos/:photoId", photoHandler.Delete)
 			}
 		}
 
