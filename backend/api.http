@@ -338,3 +338,127 @@ Content-Type: application/json
 Authorization: Bearer {{loginBuyer.response.body.token}}
 
 { "body": "test" }
+
+### =====================================================================
+### VISITS — client requests, agent manages
+### =====================================================================
+
+### 49. Request a visit WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/properties/1/visits
+Content-Type: application/json
+
+{ "scheduled_at": "2026-12-01T15:00:00Z" }
+
+### 50. Buyer requests a visit of property 1 (expect 201) — captures the visit id
+# @name requestVisit
+POST {{baseUrl}}/api/v1/properties/1/visits
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "scheduled_at": "2026-12-01T15:00:00Z", "notes": "Disponible l'apres-midi" }
+
+### 51. Request a visit in the PAST (expect 400)
+POST {{baseUrl}}/api/v1/properties/1/visits
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "scheduled_at": "2020-01-01T10:00:00Z" }
+
+### 52. Request a visit on a missing property (expect 404)
+POST {{baseUrl}}/api/v1/properties/9999/visits
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "scheduled_at": "2026-12-01T15:00:00Z" }
+
+### 53. Buyer lists their visits (expect the visit, status REQUESTED)
+GET {{baseUrl}}/api/v1/visits
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 54. Agent confirms the visit (expect 200, status CONFIRMED)
+PATCH {{baseUrl}}/api/v1/visits/{{requestVisit.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "status": "CONFIRMED" }
+
+### 55. Director (not a participant) tries to update it (expect 403)
+PATCH {{baseUrl}}/api/v1/visits/{{requestVisit.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{ "status": "CANCELLED" }
+
+### 56. Update with an invalid status (expect 400)
+PATCH {{baseUrl}}/api/v1/visits/{{requestVisit.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "status": "BANANA" }
+
+### =====================================================================
+### MEETINGS — organizer = director, participant = agent (id 1)
+### =====================================================================
+
+### 57. Create a meeting WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+
+{ "agency_id": 1, "title": "Reunion equipe", "start_at": "2026-12-01T09:00:00Z", "end_at": "2026-12-01T10:00:00Z" }
+
+### 58. Create a meeting as BUYER (expect 403 — staff only)
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "agency_id": 1, "title": "Reunion equipe", "start_at": "2026-12-01T09:00:00Z", "end_at": "2026-12-01T10:00:00Z" }
+
+### 59. Create a meeting as DIRECTOR with the agent as participant (expect 201)
+# @name createMeeting
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{
+  "agency_id": 1,
+  "title": "Point hebdo agence",
+  "description": "Suivi des dossiers en cours",
+  "start_at": "2026-12-01T09:00:00Z",
+  "end_at": "2026-12-01T10:00:00Z",
+  "location": "Salle A",
+  "participant_ids": [1]
+}
+
+### 60. Create with end BEFORE start (expect 400)
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{ "agency_id": 1, "title": "Horaire invalide", "start_at": "2026-12-01T10:00:00Z", "end_at": "2026-12-01T09:00:00Z" }
+
+### 61. Create with a PAST start (expect 400)
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{ "agency_id": 1, "title": "Dans le passe", "start_at": "2020-01-01T09:00:00Z", "end_at": "2020-01-01T10:00:00Z" }
+
+### 62. Director lists their meetings (expect the meeting, with participants)
+GET {{baseUrl}}/api/v1/meetings
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### 63. Agent (a participant) lists their meetings (expect the same meeting)
+GET {{baseUrl}}/api/v1/meetings
+Authorization: Bearer {{login.response.body.token}}
+
+### 64. Agent (not the organizer) tries to delete it (expect 403)
+DELETE {{baseUrl}}/api/v1/meetings/{{createMeeting.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### 65. Director (organizer) deletes it (expect 204)
+DELETE {{baseUrl}}/api/v1/meetings/{{createMeeting.response.body.id}}
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### 66. Delete a non-existing meeting (expect 404)
+DELETE {{baseUrl}}/api/v1/meetings/999999
+Authorization: Bearer {{loginDirector.response.body.token}}
