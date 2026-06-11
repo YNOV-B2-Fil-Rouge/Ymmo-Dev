@@ -6,91 +6,72 @@
   <title>Ymmo — Immobilier</title>
   <meta name="description" content="Ymmo, réseau d'agences immobilières. Achat et vente de biens résidentiels et professionnels." />
 
-  <!-- Tailwind (dev via CDN; see README for the production build) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="./js/tailwind-config.js"></script>
-
-  <!-- Inter font -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 </head>
 
-<body class="bg-alyssum text-midnight font-sans antialiased">
-  <!-- Skip link for keyboard/screen-reader users (accessibility) -->
-  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">
-    Aller au contenu
-  </a>
+<body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au contenu</a>
 
   <!-- ===== Header ===== -->
-  <header class="bg-midnight text-white">
+  <header class="bg-alyssum border-b-2 border-hibiscus">
     <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between" aria-label="Navigation principale">
-      <a href="./index.html" class="text-xl font-bold tracking-wide">
-        Ymmo<span class="text-gold">.</span>
+      <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
+        <span class="text-hibiscus" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+            <path d="M22 46 L50 22 L78 46" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M30 44 V80 M70 44 V80" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+            <path d="M37 44 L50 60 L63 44 M50 60 V82" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="text-xl font-bold tracking-wider">YMMO</span>
       </a>
-      <ul class="hidden md:flex items-center gap-6 text-sm">
-        <li><a href="./index.html" class="hover:text-gold transition-colors">Accueil</a></li>
-        <li><a href="#" class="hover:text-gold transition-colors">Catalogue</a></li>
-        <li><a href="#" class="hover:text-gold transition-colors">Vendre</a></li>
-      </ul>
-      <div id="nav-account" class="flex items-center gap-3">
-        <!-- Filled by js/home.js depending on auth state -->
-        <a href="./auth.html" class="bg-hibiscus hover:bg-hibiscus/90 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">
-          Connexion
-        </a>
+
+      <div id="nav-account" class="flex items-center gap-4">
+        <!-- Visitor state (swapped by js/home.js when logged in) -->
+        <a href="./auth.html" class="text-sm font-medium text-midnight hover:text-hibiscus transition-colors">Connexion</a>
+        <a href="./auth.html#register" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Inscription</a>
       </div>
     </nav>
   </header>
 
-  <!-- ===== Main ===== -->
-  <main id="main">
-    <!-- Hero -->
-    <section class="max-w-6xl mx-auto px-4 py-16 md:py-24">
-      <p class="text-hibiscus font-semibold uppercase tracking-wider text-sm">Réseau national</p>
-      <h1 class="mt-2 text-4xl md:text-5xl font-bold leading-tight max-w-2xl">
-        Trouvez le bien qui vous ressemble.
-      </h1>
-      <p class="mt-4 text-lg text-slate2 max-w-xl">
-        Achat et vente de biens résidentiels et professionnels, dans 12 villes de France.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3">
-        <a href="#" class="bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-6 py-3 rounded-md transition-colors">
-          Voir le catalogue
-        </a>
-        <a href="#" class="border border-midnight/20 hover:border-midnight text-midnight font-medium px-6 py-3 rounded-md transition-colors">
-          Estimer mon bien
-        </a>
+  <main id="main" class="flex-1">
+    <!-- ===== Hero + search ===== -->
+    <section class="relative">
+      <div class="h-64 sm:h-80 bg-midnight bg-cover bg-center"
+           style="background-image:url('https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1600&q=80')"
+           role="img" aria-label="Maison de prestige avec piscine"></div>
+
+      <div class="absolute inset-x-0 -bottom-7 flex justify-center px-4">
+        <form id="search-form" class="w-full max-w-2xl flex items-center gap-2 bg-white rounded-full border border-slate2/30 shadow-lg pl-6 pr-2 py-2" role="search">
+          <label for="search-input" class="sr-only">Rechercher un bien</label>
+          <input id="search-input" name="q" type="search" placeholder="Rechercher avec une ville, un code postal, une région …"
+            class="flex-1 bg-transparent text-sm focus:outline-none placeholder-slate2" />
+          <button type="submit" class="w-10 h-10 shrink-0 rounded-full border border-hibiscus text-hibiscus flex items-center justify-center hover:bg-hibiscus hover:text-white transition-colors" aria-label="Lancer la recherche">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </button>
+        </form>
       </div>
     </section>
 
-    <!-- Design system reference (temporary — confirms the charte is wired) -->
-    <section class="max-w-6xl mx-auto px-4 pb-20" aria-labelledby="ds-title">
-      <h2 id="ds-title" class="text-2xl font-bold mb-6">Design system</h2>
+    <!-- ===== Catalogue ===== -->
+    <section class="max-w-6xl mx-auto px-4 pt-16 pb-16" aria-labelledby="catalogue-title">
+      <h1 id="catalogue-title" class="sr-only">Catalogue des biens</h1>
 
-      <h3 class="text-sm font-semibold text-slate2 uppercase tracking-wide mb-3">Palette</h3>
-      <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div><div class="h-16 rounded-md bg-midnight border border-black/5"></div><p class="mt-2 text-sm font-medium">Text</p><p class="text-xs text-slate2">#2c3e50</p></div>
-        <div><div class="h-16 rounded-md bg-alyssum border border-black/10"></div><p class="mt-2 text-sm font-medium">Background</p><p class="text-xs text-slate2">#efebe7</p></div>
-        <div><div class="h-16 rounded-md bg-hibiscus border border-black/5"></div><p class="mt-2 text-sm font-medium">Primary</p><p class="text-xs text-slate2">#b63753</p></div>
-        <div><div class="h-16 rounded-md bg-slate2 border border-black/5"></div><p class="mt-2 text-sm font-medium">Secondary</p><p class="text-xs text-slate2">#7f8c8d</p></div>
-        <div><div class="h-16 rounded-md bg-gold border border-black/5"></div><p class="mt-2 text-sm font-medium">Accent</p><p class="text-xs text-slate2">#d4af37</p></div>
+      <div id="catalogue" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Cards injected by js/home.js -->
       </div>
 
-      <h3 class="text-sm font-semibold text-slate2 uppercase tracking-wide mt-8 mb-3">Composants</h3>
-      <div class="flex flex-wrap items-center gap-3">
-        <button class="bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-5 py-2.5 rounded-md transition-colors">Bouton principal</button>
-        <button class="border border-midnight/20 hover:border-midnight text-midnight font-medium px-5 py-2.5 rounded-md transition-colors">Bouton secondaire</button>
-        <span class="inline-flex items-center gap-1 bg-gold/15 text-gold-700 border border-gold/40 px-3 py-1 rounded-full text-sm font-semibold" style="color:#a9851f">
-          ★ Exclusivité
-        </span>
-      </div>
+      <p id="empty" class="hidden text-center text-slate2 py-10">Aucun bien ne correspond à votre recherche.</p>
     </section>
   </main>
 
   <!-- ===== Footer ===== -->
-  <footer class="bg-midnight text-white/80">
-    <div class="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm">
-      <p>© <span id="year"></span> Ymmo — Siège : Aix-en-Provence</p>
-      <p class="text-white/50">Plateforme immobilière</p>
+  <footer class="bg-midnight text-white/70">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-center text-sm">
+      Ymmo — Immobilier © <span id="year"></span>
     </div>
   </footer>
 
