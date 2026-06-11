@@ -73,6 +73,42 @@ curl http://localhost:8080/health
 # {"database":"up","service":"ymmo-api","status":"ok"}
 ```
 
+## API documentation (Swagger)
+
+Interactive docs are served at **http://localhost:8080/swagger/index.html**.
+
+The spec is generated from the annotations in the handlers by `swag`.
+With Docker, it is generated automatically at image build time — nothing to do.
+
+For the **local** workflow (`go run`), generate it once (and after adding or
+changing route annotations):
+
+```bash
+# Install the CLI once
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate the docs package (creates backend/docs/)
+cd backend
+swag init -g cmd/api/main.go -o docs
+```
+
+> The generated `docs/` package is imported by the router, so the project must
+> have it to build. Commit it (so teammates don't all need `swag` installed),
+> or regenerate locally as above.
+
+### Documenting a new route
+
+Add annotation comments above the handler, then re-run `swag init`. Example:
+
+```go
+// @Summary  Do something
+// @Tags     mytag
+// @Produce  json
+// @Success  200  {object}  dto.MyResponse
+// @Router   /my/route [get]
+func (h *MyHandler) MyRoute(c *gin.Context) { ... }
+```
+
 ## Conventions
 
 - Branch per feature, documented commits, Pull Requests (no direct push to `main`).

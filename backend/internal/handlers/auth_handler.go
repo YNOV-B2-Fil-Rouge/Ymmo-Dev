@@ -21,7 +21,16 @@ func NewAuthHandler(svc *services.AuthService) *AuthHandler {
 }
 
 // Register creates a new buyer account.
-// POST /api/v1/auth/register
+// @Summary      Register a new buyer account
+// @Description  Creates a buyer account. The role is forced to BUYER server-side.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.RegisterRequest  true  "Account details"
+// @Success      201   {object}  dto.UserResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      409   {object}  map[string]string
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -44,7 +53,15 @@ func (h *AuthHandler) Register(c *gin.Context) {
 }
 
 // Login authenticates and returns a JWT.
-// POST /api/v1/auth/login
+// @Summary      Log in and get a JWT
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      dto.LoginRequest  true  "Credentials"
+// @Success      200   {object}  dto.AuthResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -71,7 +88,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 // Me returns the currently authenticated user's profile.
-// GET /api/v1/auth/me   (protected)
+// @Summary      Get the current user's profile
+// @Tags         auth
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  dto.UserResponse
+// @Failure      401  {object}  map[string]string
+// @Router       /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID := middleware.CurrentUserID(c)
 	user, err := h.svc.GetUser(userID)
