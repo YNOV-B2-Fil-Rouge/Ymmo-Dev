@@ -272,3 +272,69 @@ Authorization: Bearer {{login.response.body.token}}
 ### 37. Delete a non-existing photo (expect 404)
 DELETE {{baseUrl}}/api/v1/properties/1/photos/999999
 Authorization: Bearer {{login.response.body.token}}
+
+### =====================================================================
+### MESSAGING — client (buyer) <-> agent (id 1)
+### =====================================================================
+
+### 38. Login as DIRECTOR (a third party, for the access-control test)
+# @name loginDirector
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "email": "director@ymmo.fr", "password": "director1234" }
+
+### 39. Buyer starts a conversation with the agent about property 1 (expect 201)
+# @name startConv
+POST {{baseUrl}}/api/v1/conversations
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "agent_id": 1, "property_id": 1 }
+
+### 40. Start the SAME conversation again (idempotent — same id, no duplicate)
+POST {{baseUrl}}/api/v1/conversations
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "agent_id": 1, "property_id": 1 }
+
+### 41. Buyer sends a message (expect 201)
+POST {{baseUrl}}/api/v1/conversations/{{startConv.response.body.id}}/messages
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "body": "Bonjour, ce bien est-il toujours disponible ?" }
+
+### 42. Send a message WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/conversations/{{startConv.response.body.id}}/messages
+Content-Type: application/json
+
+{ "body": "test" }
+
+### 43. DIRECTOR (not a participant) tries to read the thread (expect 403)
+GET {{baseUrl}}/api/v1/conversations/{{startConv.response.body.id}}/messages
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### 44. Agent's unread count (expect 1)
+GET {{baseUrl}}/api/v1/messages/unread-count
+Authorization: Bearer {{login.response.body.token}}
+
+### 45. Agent reads the thread (marks messages as read)
+GET {{baseUrl}}/api/v1/conversations/{{startConv.response.body.id}}/messages
+Authorization: Bearer {{login.response.body.token}}
+
+### 46. Agent's unread count again (expect 0)
+GET {{baseUrl}}/api/v1/messages/unread-count
+Authorization: Bearer {{login.response.body.token}}
+
+### 47. Agent lists their conversations (expect the thread)
+GET {{baseUrl}}/api/v1/conversations
+Authorization: Bearer {{login.response.body.token}}
+
+### 48. Send to a non-existing conversation (expect 404)
+POST {{baseUrl}}/api/v1/conversations/999999/messages
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "body": "test" }
