@@ -9,6 +9,11 @@ backend/ymmo-api
 *.test
 *.out
 
+# Python (AI service)
+__pycache__/
+*.pyc
+ai-service/.venv/
+
 # Dependencies
 vendor/
 
