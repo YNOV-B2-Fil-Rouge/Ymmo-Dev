@@ -1,0 +1,193 @@
+### Ymmo API — manual test suite
+### Use with the VS Code "REST Client" extension: click "Send Request"
+### above each block. Run the seed (db/seed.sql) first so data exists.
+
+@baseUrl = http://localhost:8080
+
+### --- 0. Health -------------------------------------------------------
+GET {{baseUrl}}/health
+
+### =====================================================================
+### AUTH
+### =====================================================================
+
+### 1. Register a new buyer (expect 201)
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "new.buyer@ymmo.fr",
+  "password": "motdepasse123",
+  "first_name": "Camille",
+  "last_name": "Durand"
+}
+
+### 2. Register again with same email (expect 409 Conflict)
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "new.buyer@ymmo.fr",
+  "password": "motdepasse123",
+  "first_name": "Camille",
+  "last_name": "Durand"
+}
+
+### 3. Register with invalid input (expect 400 — bad email + short password)
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "password": "123",
+  "first_name": "X",
+  "last_name": "Y"
+}
+
+### 4. Login as AGENT (captures the token for the next requests)
+# @name login
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "agent@ymmo.fr",
+  "password": "agent1234"
+}
+
+### 5. Login with wrong password (expect 401)
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "agent@ymmo.fr",
+  "password": "wrongpassword"
+}
+
+### 6. Me — with the agent token (expect 200 + agent profile)
+GET {{baseUrl}}/api/v1/auth/me
+Authorization: Bearer {{login.response.body.token}}
+
+### 7. Me — without a token (expect 401)
+GET {{baseUrl}}/api/v1/auth/me
+
+### =====================================================================
+### PROPERTIES — public
+### =====================================================================
+
+### 8. List all available properties (expect 4 seeded, DRAFT hidden)
+GET {{baseUrl}}/api/v1/properties
+
+### 9. Filter by city
+GET {{baseUrl}}/api/v1/properties?city=Paris
+
+### 10. Filter by price + sort ascending
+GET {{baseUrl}}/api/v1/properties?max_price=500000&sort=price_asc
+
+### 11. Filter by sector (RESIDENTIAL only)
+GET {{baseUrl}}/api/v1/properties?sector=RESIDENTIAL
+
+### 12. Filter by energy rating D or better
+GET {{baseUrl}}/api/v1/properties?max_energy=D
+
+### 13. Pagination (2 per page, page 1)
+GET {{baseUrl}}/api/v1/properties?page_size=2&page=1
+
+### 14. Get one property by id (expect 200 + view_count increment)
+GET {{baseUrl}}/api/v1/properties/1
+
+### 15. Get a non-existing property (expect 404)
+GET {{baseUrl}}/api/v1/properties/9999
+
+### =====================================================================
+### PROPERTIES — protected (staff only)
+### =====================================================================
+
+### 16. Create a property WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/properties
+Content-Type: application/json
+
+{
+  "title": "Test sans token",
+  "category_id": 2,
+  "price": 300000,
+  "area": 60,
+  "city": "Nice",
+  "postal_code": "06000",
+  "agency_id": 1
+}
+
+### 17. Create a property AS AGENT (expect 201, status DRAFT, auto reference)
+POST {{baseUrl}}/api/v1/properties
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "title": "Appartement T2 rénové",
+  "description": "Refait à neuf, proche commerces",
+  "category_id": 2,
+  "price": 295000,
+  "area": 48,
+  "rooms": 2,
+  "bedrooms": 1,
+  "energy_rating": "C",
+  "city": "Nice",
+  "postal_code": "06000",
+  "agency_id": 1
+}
+
+### 18. Create with invalid input (expect 400 — missing title, price <= 0)
+POST {{baseUrl}}/api/v1/properties
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "category_id": 2,
+  "price": 0,
+  "area": 48,
+  "city": "Nice",
+  "postal_code": "06000",
+  "agency_id": 1
+}
+
+### 19. Update a property (expect 200 — partial update)
+PUT {{baseUrl}}/api/v1/properties/2
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "price": 630000,
+  "status": "AVAILABLE"
+}
+
+### 20. Delete a property (expect 204)
+DELETE {{baseUrl}}/api/v1/properties/3
+Authorization: Bearer {{login.response.body.token}}
+
+### =====================================================================
+### RBAC — a BUYER must NOT manage properties
+### =====================================================================
+
+### 21. Login as BUYER
+# @name loginBuyer
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "buyer@ymmo.fr",
+  "password": "buyer1234"
+}
+
+### 22. Buyer tries to create a property (expect 403 Forbidden)
+POST {{baseUrl}}/api/v1/properties
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{
+  "title": "Tentative interdite",
+  "category_id": 2,
+  "price": 200000,
+  "area": 40,
+  "city": "Lille",
+  "postal_code": "59000",
+  "agency_id": 1
+}
