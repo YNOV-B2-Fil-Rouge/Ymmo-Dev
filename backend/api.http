@@ -222,3 +222,53 @@ Authorization: Bearer {{loginBuyer.response.body.token}}
 ### 29. List again (expect 200, now empty)
 GET {{baseUrl}}/api/v1/favorites
 Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### =====================================================================
+### PHOTOS — staff only (use the AGENT token from request #4)
+### =====================================================================
+
+### 30. Add a photo WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/properties/1/photos
+Content-Type: application/json
+
+{ "url": "https://placehold.co/800x600", "is_primary": true }
+
+### 31. Add a photo as BUYER (expect 403 — not staff)
+POST {{baseUrl}}/api/v1/properties/1/photos
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "url": "https://placehold.co/800x600", "is_primary": true }
+
+### 32. Add a photo as AGENT (expect 201) — captures the new photo id
+# @name addPhoto
+POST {{baseUrl}}/api/v1/properties/1/photos
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "url": "https://placehold.co/800x600?text=New", "is_primary": true }
+
+### 33. Add a photo with an invalid URL (expect 400)
+POST {{baseUrl}}/api/v1/properties/1/photos
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "url": "not-a-url" }
+
+### 34. Add a photo to a missing property (expect 404)
+POST {{baseUrl}}/api/v1/properties/9999/photos
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "url": "https://placehold.co/800x600" }
+
+### 35. Check the photo shows up on the property (expect it in "photos")
+GET {{baseUrl}}/api/v1/properties/1
+
+### 36. Delete the photo just added as AGENT (expect 204)
+DELETE {{baseUrl}}/api/v1/properties/1/photos/{{addPhoto.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### 37. Delete a non-existing photo (expect 404)
+DELETE {{baseUrl}}/api/v1/properties/1/photos/999999
+Authorization: Bearer {{login.response.body.token}}
