@@ -11,6 +11,9 @@ import (
 
 	"ymmo/internal/config"
 	"ymmo/internal/handlers"
+	"ymmo/internal/middleware"
+	"ymmo/internal/repositories"
+	"ymmo/internal/services"
 )
 
 // New builds the fully configured HTTP engine.
@@ -38,13 +41,27 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	health := handlers.NewHealthHandler(db)
 	r.GET("/health", health.Check)
 
+	// --- Dependency wiring (composition root) ---
+	// Built once at startup and injected downwards.
+	userRepo := repositories.NewUserRepository(db)
+	roleRepo := repositories.NewRoleRepository(db)
+	authService := services.NewAuthService(userRepo, roleRepo, cfg.JWTSecret)
+	authHandler := handlers.NewAuthHandler(authService)
+
 	// --- Versioned API ---
-	// Future modules (auth, properties, ...) register their routes here.
 	api := r.Group("/api/v1")
 	{
 		api.GET("/ping", func(c *gin.Context) {
 			c.JSON(200, gin.H{"message": "pong"})
 		})
+
+		auth := api.Group("/auth")
+		{
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/login", authHandler.Login)
+			// Protected: requires a valid Bearer token.
+			auth.GET("/me", middleware.Auth(cfg.JWTSecret), authHandler.Me)
+		}
 	}
 
 	return r
