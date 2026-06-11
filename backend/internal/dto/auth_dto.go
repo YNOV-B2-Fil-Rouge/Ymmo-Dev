@@ -12,7 +12,7 @@ type RegisterRequest struct {
 	Password  string `json:"password" binding:"required,min=8,max=72"` // bcrypt caps at 72 bytes
 	FirstName string `json:"first_name" binding:"required,min=2,max=80"`
 	LastName  string `json:"last_name" binding:"required,min=2,max=80"`
-	Phone     string `json:"phone" binding:"omitempty,max=20"`
+	Phone     string `json:"phone" binding:"omitempty,phone"`
 }
 
 // LoginRequest is the credentials payload.

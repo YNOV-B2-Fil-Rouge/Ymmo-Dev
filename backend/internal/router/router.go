@@ -14,6 +14,7 @@ import (
 	"ymmo/internal/middleware"
 	"ymmo/internal/repositories"
 	"ymmo/internal/services"
+	"ymmo/internal/validation"
 )
 
 // New builds the fully configured HTTP engine.
@@ -21,6 +22,9 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	if cfg.AppEnv == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	// Install custom validators (e.g. "phone") before any route binds input.
+	validation.Register()
 
 	r := gin.New()
 

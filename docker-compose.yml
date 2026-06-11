@@ -50,3 +50,6 @@ services:
 
 volumes:
   db_data:
+    # Explicit name so the volume is stable regardless of the project folder
+    # name (otherwise Docker prefixes it, e.g. "<folder>_db_data").
+    name: ymmo_db_data
