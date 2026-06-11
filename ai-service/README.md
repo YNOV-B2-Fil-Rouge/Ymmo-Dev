@@ -13,7 +13,21 @@ Instead of mixing the two, the analytical workload lives in its own service
 (separation of concerns / SOLID), using Python's data ecosystem (pandas,
 scikit-learn).
 
-## Run locally
+## Run with Docker (recommended)
+
+The service is part of the project's `docker-compose.yml`. From the **project
+root**:
+
+```bash
+docker compose up -d --build ai
+```
+
+This builds a Linux image (no local build tools needed) and starts the service
+once the database is healthy. Docs at http://localhost:8000/docs.
+
+## Run locally (without Docker)
+
+Requires Python 3.11–3.13.
 
 ```bash
 cd ai-service

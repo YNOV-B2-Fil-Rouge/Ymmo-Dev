@@ -48,6 +48,25 @@ services:
     ports:
       - "8080:8080"
 
+  # ---------- Python Data/AI service ----------
+  ai:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: ymmo-ai
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db # service name on the compose network
+      DB_PORT: "3306"
+      DB_USER: ${DB_USER:-ymmo_user}
+      DB_PASSWORD: ${DB_PASSWORD:-ymmo_pass}
+      DB_NAME: ${DB_NAME:-ymmo}
+    ports:
+      - "8000:8000"
+
 volumes:
   db_data:
     # Explicit name so the volume is stable regardless of the project folder
