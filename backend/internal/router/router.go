@@ -73,6 +73,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	photoService := services.NewPhotoService(photoRepo, propertyRepo)
 	photoHandler := handlers.NewPhotoHandler(photoService)
 
+	conversationRepo := repositories.NewConversationRepository(db)
+	messageService := services.NewMessageService(conversationRepo, userRepo)
+	messageHandler := handlers.NewMessageHandler(messageService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
@@ -117,6 +121,17 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 
 		// Current user's favorites list.
 		api.GET("/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.List)
+
+		// Messaging: any authenticated user, restricted to their own threads.
+		messaging := api.Group("")
+		messaging.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			messaging.POST("/conversations", messageHandler.StartConversation)
+			messaging.GET("/conversations", messageHandler.ListConversations)
+			messaging.POST("/conversations/:id/messages", messageHandler.SendMessage)
+			messaging.GET("/conversations/:id/messages", messageHandler.GetMessages)
+			messaging.GET("/messages/unread-count", messageHandler.UnreadCount)
+		}
 	}
 
 	return r
