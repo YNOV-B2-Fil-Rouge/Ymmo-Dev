@@ -21,7 +21,23 @@ func NewPropertyHandler(svc *services.PropertyService) *PropertyHandler {
 }
 
 // List returns the public, filtered, paginated catalogue.
-// GET /api/v1/properties
+// @Summary      List / search properties
+// @Description  Public catalogue. Only AVAILABLE properties are returned by default.
+// @Tags         properties
+// @Produce      json
+// @Param        city         query     string  false  "City"
+// @Param        category_id  query     int     false  "Category id"
+// @Param        sector       query     string  false  "RESIDENTIAL or COMMERCIAL"
+// @Param        min_price    query     number  false  "Minimum price"
+// @Param        max_price    query     number  false  "Maximum price"
+// @Param        min_area     query     number  false  "Minimum area (m2)"
+// @Param        max_area     query     number  false  "Maximum area (m2)"
+// @Param        max_energy   query     string  false  "Max energy class (A..G, returns this or better)"
+// @Param        page         query     int     false  "Page number (default 1)"
+// @Param        page_size    query     int     false  "Page size (default 12, max 50)"
+// @Param        sort         query     string  false  "price_asc | price_desc | recent"
+// @Success      200          {object}  map[string]interface{}
+// @Router       /properties [get]
 func (h *PropertyHandler) List(c *gin.Context) {
 	var q dto.PropertySearchQuery
 	if err := c.ShouldBindQuery(&q); err != nil {
@@ -42,7 +58,14 @@ func (h *PropertyHandler) List(c *gin.Context) {
 }
 
 // Get returns a single property and records a view.
-// GET /api/v1/properties/:id
+// @Summary      Get a property by id
+// @Description  Returns the property and increments its view counter.
+// @Tags         properties
+// @Produce      json
+// @Param        id   path      int  true  "Property id"
+// @Success      200  {object}  models.Property
+// @Failure      404  {object}  map[string]string
+// @Router       /properties/{id} [get]
 func (h *PropertyHandler) Get(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -62,7 +85,18 @@ func (h *PropertyHandler) Get(c *gin.Context) {
 }
 
 // Create lists a new property (agent/director/HQ only).
-// POST /api/v1/properties
+// @Summary      Create a property
+// @Description  Staff only. The new property starts as DRAFT.
+// @Tags         properties
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body  body      dto.CreatePropertyRequest  true  "Property to create"
+// @Success      201   {object}  models.Property
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
+// @Router       /properties [post]
 func (h *PropertyHandler) Create(c *gin.Context) {
 	var req dto.CreatePropertyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -80,7 +114,20 @@ func (h *PropertyHandler) Create(c *gin.Context) {
 }
 
 // Update applies a partial change to a property.
-// PUT /api/v1/properties/:id
+// @Summary      Update a property
+// @Description  Staff only. Partial update: only the fields sent are changed.
+// @Tags         properties
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id    path      int                        true  "Property id"
+// @Param        body  body      dto.UpdatePropertyRequest  true  "Fields to update"
+// @Success      200   {object}  models.Property
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Router       /properties/{id} [put]
 func (h *PropertyHandler) Update(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {
@@ -106,7 +153,17 @@ func (h *PropertyHandler) Update(c *gin.Context) {
 }
 
 // Delete removes a property.
-// DELETE /api/v1/properties/:id
+// @Summary      Delete a property
+// @Description  Staff only.
+// @Tags         properties
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path  int  true  "Property id"
+// @Success      204  "No Content"
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /properties/{id} [delete]
 func (h *PropertyHandler) Delete(c *gin.Context) {
 	id, ok := parseID(c)
 	if !ok {

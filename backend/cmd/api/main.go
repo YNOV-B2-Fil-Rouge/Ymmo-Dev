@@ -17,6 +17,15 @@ import (
 	"ymmo/internal/router"
 )
 
+// @title           Ymmo API
+// @version         1.0
+// @description     REST API for the Ymmo real-estate platform.
+// @BasePath        /api/v1
+
+// @securityDefinitions.apikey  BearerAuth
+// @in                          header
+// @name                        Authorization
+// @description                 Type "Bearer" followed by a space and your JWT token.
 func main() {
 	// 1. Configuration
 	cfg, err := config.Load()
