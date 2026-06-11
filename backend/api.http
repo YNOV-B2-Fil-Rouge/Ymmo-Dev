@@ -191,3 +191,34 @@ Authorization: Bearer {{loginBuyer.response.body.token}}
   "postal_code": "59000",
   "agency_id": 1
 }
+
+### =====================================================================
+### FAVORITES — any authenticated user (here: the buyer)
+### =====================================================================
+
+### 23. Add a favorite WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/properties/1/favorites
+
+### 24. Add a favorite as buyer (expect 204)
+POST {{baseUrl}}/api/v1/properties/1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 25. Add the SAME favorite again (idempotent, expect 204 — no duplicate error)
+POST {{baseUrl}}/api/v1/properties/1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 26. Favorite a non-existing property (expect 404)
+POST {{baseUrl}}/api/v1/properties/9999/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 27. List my favorites (expect 200, contains property 1)
+GET {{baseUrl}}/api/v1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 28. Remove the favorite (expect 204)
+DELETE {{baseUrl}}/api/v1/properties/1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 29. List again (expect 200, now empty)
+GET {{baseUrl}}/api/v1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
