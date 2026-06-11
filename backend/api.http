@@ -503,3 +503,75 @@ Authorization: Bearer {{loginBuyer.response.body.token}}
 ### 73. Delete a non-existing alert (expect 404)
 DELETE {{baseUrl}}/api/v1/alerts/999999
 Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### =====================================================================
+### SALE FILES — agent opens & advances, participants read
+### (buyer = user 3, agent = user 1, director = user 2)
+### =====================================================================
+
+### 74. Create a sale WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+
+{ "property_id": 1, "buyer_id": 3 }
+
+### 75. Create a sale as BUYER (expect 403 — staff only)
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "property_id": 1, "buyer_id": 3 }
+
+### 76. Create a sale as AGENT (expect 201) — captures the sale id
+# @name createSale
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "property_id": 1, "buyer_id": 3, "negotiated_price": 460000, "offer_date": "2026-06-15T00:00:00Z" }
+
+### 77. Create with a missing property (expect 404)
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "property_id": 9999, "buyer_id": 3 }
+
+### 78. Create with a missing buyer (expect 404)
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "property_id": 1, "buyer_id": 9999 }
+
+### 79. Buyer (participant) reads the sale (expect 200)
+GET {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 80. Director (not a participant) reads it (expect 403)
+GET {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### 81. Director (staff, but not the sale's agent) tries to advance it (expect 403)
+PATCH {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{ "status": "PRELIMINARY_CONTRACT" }
+
+### 82. Agent advances the sale to "compromis" (expect 200)
+PATCH {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "status": "PRELIMINARY_CONTRACT", "contract_date": "2026-07-01T00:00:00Z" }
+
+### 83. Agent completes the sale (expect 200) — property becomes SOLD
+PATCH {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "status": "COMPLETED", "deed_date": "2026-09-01T00:00:00Z" }
+
+### 84. The linked property is now SOLD (check status — and it leaves the public catalogue)
+GET {{baseUrl}}/api/v1/properties/1
