@@ -65,6 +65,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	propertyService := services.NewPropertyService(propertyRepo)
 	propertyHandler := handlers.NewPropertyHandler(propertyService)
 
+	favoriteRepo := repositories.NewFavoriteRepository(db)
+	favoriteService := services.NewFavoriteService(favoriteRepo, propertyRepo)
+	favoriteHandler := handlers.NewFavoriteHandler(favoriteService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
