@@ -52,4 +52,24 @@ export const api = {
   listFavorites: () => request("/favorites", { auth: true }),
   addFavorite: (id) => request(`/properties/${id}/favorites`, { method: "POST", auth: true }),
   removeFavorite: (id) => request(`/properties/${id}/favorites`, { method: "DELETE", auth: true }),
+
+  // --- Messaging ---
+  startConversation: (payload) => request("/conversations", { method: "POST", body: payload, auth: true }),
+};
+
+// ----- Python Data/AI service (separate base URL) -----
+async function aiRequest(path, { method = "GET", body } = {}) {
+  const res = await fetch(`${CONFIG.AI_BASE}${path}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const isJson = res.headers.get("content-type")?.includes("application/json");
+  const data = isJson ? await res.json() : null;
+  if (!res.ok) throw { status: res.status, data };
+  return data;
+}
+
+export const ai = {
+  estimate: (payload) => aiRequest("/estimate", { method: "POST", body: payload }),
 };
