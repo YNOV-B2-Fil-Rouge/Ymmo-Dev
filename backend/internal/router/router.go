@@ -90,6 +90,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			properties.GET("", propertyHandler.List)
 			properties.GET("/:id", propertyHandler.Get)
 
+			// Favorites: any authenticated user (e.g. a buyer).
+			properties.POST("/:id/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.Add)
+			properties.DELETE("/:id/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.Remove)
+
 			// Management: staff only (valid token + internal role).
 			staff := properties.Group("")
 			staff.Use(
@@ -102,6 +106,9 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 				staff.DELETE("/:id", propertyHandler.Delete)
 			}
 		}
+
+		// Current user's favorites list.
+		api.GET("/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.List)
 	}
 
 	return r
