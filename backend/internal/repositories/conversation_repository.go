@@ -60,6 +60,8 @@ func (r *ConversationRepository) FindExisting(clientID, agentID uint, propertyID
 func (r *ConversationRepository) ListForUser(userID uint) ([]models.Conversation, error) {
 	var conversations []models.Conversation
 	err := r.db.
+		Preload("Client").
+		Preload("Agent").
 		Where("client_id = ? OR agent_id = ?", userID, userID).
 		Order("created_at DESC").
 		Find(&conversations).Error
