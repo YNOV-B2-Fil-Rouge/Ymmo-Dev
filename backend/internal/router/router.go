@@ -65,7 +65,7 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	userHandler := handlers.NewUserHandler(userService)
 
 	propertyRepo := repositories.NewPropertyRepository(db)
-	propertyService := services.NewPropertyService(propertyRepo)
+	propertyService := services.NewPropertyService(propertyRepo, userRepo)
 	propertyHandler := handlers.NewPropertyHandler(propertyService)
 
 	favoriteRepo := repositories.NewFavoriteRepository(db)

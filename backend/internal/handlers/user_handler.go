@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"ymmo/internal/middleware"
 	"ymmo/internal/services"
 )
 
@@ -26,7 +27,9 @@ func NewUserHandler(svc *services.UserService) *UserHandler {
 // @Failure      403  {object}  map[string]string
 // @Router       /management/collaborators [get]
 func (h *UserHandler) ListCollaborators(c *gin.Context) {
-	items, err := h.svc.ListCollaborators()
+	userID := middleware.CurrentUserID(c)
+	role := middleware.CurrentRole(c)
+	items, err := h.svc.ListCollaborators(userID, role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch collaborators"})
 		return

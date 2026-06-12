@@ -13,10 +13,11 @@ var ErrPropertyNotFound = errors.New("property not found")
 
 type PropertyService struct {
 	properties *repositories.PropertyRepository
+	users      *repositories.UserRepository
 }
 
-func NewPropertyService(properties *repositories.PropertyRepository) *PropertyService {
-	return &PropertyService{properties: properties}
+func NewPropertyService(properties *repositories.PropertyRepository, users *repositories.UserRepository) *PropertyService {
+	return &PropertyService{properties: properties, users: users}
 }
 
 // Search returns a page of properties plus its pagination metadata.
@@ -52,9 +53,20 @@ func (s *PropertyService) ListMine(agentID uint) ([]models.Property, error) {
 	return s.properties.ListByAgent(agentID)
 }
 
-// ListAll returns every property (all statuses) for the management view.
-func (s *PropertyService) ListAll() ([]models.Property, error) {
-	return s.properties.ListAll()
+// ListManaged returns the properties a manager may oversee: HQ sees every
+// property nationwide, a director only those of their own agency.
+func (s *PropertyService) ListManaged(userID uint, role string) ([]models.Property, error) {
+	if role == "HQ" {
+		return s.properties.ListAll()
+	}
+	user, err := s.users.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil || user.AgencyID == nil {
+		return []models.Property{}, nil
+	}
+	return s.properties.ListByAgency(*user.AgencyID)
 }
 
 // Get returns a property and records a view (popularity tracking).

@@ -72,8 +72,20 @@ func (r *PropertyRepository) ListByAgent(agentID uint) ([]models.Property, error
 	return properties, err
 }
 
-// ListAll returns every property, ALL statuses — for the director/HQ
-// management view.
+// ListByAgency returns every property of an agency, ALL statuses — for the
+// agency director's management view.
+func (r *PropertyRepository) ListByAgency(agencyID uint16) ([]models.Property, error) {
+	var properties []models.Property
+	err := r.db.
+		Where("agency_id = ?", agencyID).
+		Preload("Category").
+		Preload("Photos").
+		Order("created_at DESC").
+		Find(&properties).Error
+	return properties, err
+}
+
+// ListAll returns every property, ALL statuses — for the HQ national view.
 func (r *PropertyRepository) ListAll() ([]models.Property, error) {
 	var properties []models.Property
 	err := r.db.

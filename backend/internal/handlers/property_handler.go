@@ -86,7 +86,9 @@ func (h *PropertyHandler) ListMine(c *gin.Context) {
 // @Failure      403  {object}  map[string]string
 // @Router       /management/properties [get]
 func (h *PropertyHandler) ListAll(c *gin.Context) {
-	items, err := h.svc.ListAll()
+	userID := middleware.CurrentUserID(c)
+	role := middleware.CurrentRole(c)
+	items, err := h.svc.ListManaged(userID, role)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch properties"})
 		return

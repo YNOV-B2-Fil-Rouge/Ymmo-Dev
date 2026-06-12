@@ -63,6 +63,18 @@ func (r *UserRepository) ListInternal() ([]models.User, error) {
 	return users, err
 }
 
+// ListInternalByAgency returns the internal staff of a single agency.
+func (r *UserRepository) ListInternalByAgency(agencyID uint16) ([]models.User, error) {
+	var users []models.User
+	err := r.db.
+		Preload("Role").
+		Joins("JOIN roles ON roles.id = users.role_id").
+		Where("roles.is_internal = ? AND users.agency_id = ?", true, agencyID).
+		Order("users.last_name").
+		Find(&users).Error
+	return users, err
+}
+
 // ExistsByEmail reports whether an account already uses this email.
 func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
 	var count int64
