@@ -12,8 +12,11 @@ const user = currentUser();
 if (user) {
   // Roles allowed to publish a listing.
   const canPublish = ["AGENT", "DIRECTOR", "HQ", "SELLER"].includes(user.role);
-  const isStaff = ["AGENT", "DIRECTOR", "HQ"].includes(user.role);
-  const dashboardHref = ["DIRECTOR", "HQ"].includes(user.role) ? "./dashboard-director.html" : "./dashboard.html";
+  const isStaff = ["AGENT", "DIRECTOR", "HQ", "IT"].includes(user.role);
+  const dashboardHref =
+    user.role === "IT" ? "./dashboard-it.html"
+    : ["DIRECTOR", "HQ"].includes(user.role) ? "./dashboard-director.html"
+    : "./dashboard.html";
   account.innerHTML = `
     ${isStaff ? `<a href="${dashboardHref}" class="text-sm font-medium text-midnight hover:text-hibiscus transition-colors">Dashboard</a>` : ""}
     ${canPublish ? `<a href="./property-form.html" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Publier une annonce</a>` : ""}

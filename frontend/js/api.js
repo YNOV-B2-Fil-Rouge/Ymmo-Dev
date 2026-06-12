@@ -56,6 +56,10 @@ export const api = {
   allProperties: () => request("/management/properties", { auth: true }),
   collaborators: () => request("/management/collaborators", { auth: true }),
 
+  // --- IT administration ---
+  allUsers: () => request("/management/users", { auth: true }),
+  permissionsMatrix: () => request("/management/permissions", { auth: true }),
+
   // --- Planning ---
   listVisits: () => request("/visits", { auth: true }),
   listMeetings: () => request("/meetings", { auth: true }),
