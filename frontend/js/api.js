@@ -48,6 +48,9 @@ export const api = {
   listProperties: (queryString = "") => request(`/properties${queryString}`),
   getProperty: (id) => request(`/properties/${id}`),
   myProperties: () => request("/me/properties", { auth: true }),
+  createProperty: (payload) => request("/properties", { method: "POST", body: payload, auth: true }),
+  updateProperty: (id, payload) => request(`/properties/${id}`, { method: "PUT", body: payload, auth: true }),
+  deleteProperty: (id) => request(`/properties/${id}`, { method: "DELETE", auth: true }),
 
   // --- Planning ---
   listVisits: () => request("/visits", { auth: true }),

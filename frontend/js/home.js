@@ -15,7 +15,7 @@ if (user) {
   const isStaff = ["AGENT", "DIRECTOR", "HQ"].includes(user.role);
   account.innerHTML = `
     ${isStaff ? `<a href="./dashboard.html" class="text-sm font-medium text-midnight hover:text-hibiscus transition-colors">Dashboard</a>` : ""}
-    ${canPublish ? `<a href="./property-new.html" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Publier une annonce</a>` : ""}
+    ${canPublish ? `<a href="./property-form.html" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Publier une annonce</a>` : ""}
     <a href="./profile.html" title="Mon profil" aria-label="Mon profil (${escapeHtml(user.first_name)})"
        class="w-9 h-9 rounded-full border border-hibiscus text-hibiscus flex items-center justify-center hover:bg-hibiscus hover:text-white transition-colors">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-3.5 3.6-6 8-6s8 2.5 8 6"/></svg>

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ymmo — Annonce</title>
+  <meta name="description" content="Publier ou modifier un bien immobilier." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/tailwind-config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au formulaire</a>
+
+  <header class="bg-alyssum border-b-2 border-hibiscus">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
+        <span class="text-hibiscus" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+            <path d="M22 46 L50 22 L78 46" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M30 44 V80 M70 44 V80" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+            <path d="M37 44 L50 60 L63 44 M50 60 V82" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <span class="text-xl font-bold tracking-wider">YMMO</span>
+      </a>
+      <a href="./dashboard.html" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Retour au dashboard</a>
+    </div>
+  </header>
+
+  <main id="main" class="flex-1 max-w-3xl mx-auto w-full px-4 py-10">
+    <h1 id="form-title" class="text-2xl font-bold mb-6">Publier une annonce</h1>
+
+    <form id="property-form" class="space-y-5" novalidate>
+      <div>
+        <label for="title" class="block text-hibiscus font-semibold text-sm mb-1">Titre *</label>
+        <input id="title" name="title" type="text" required class="ym-input" placeholder="Maison plein pied" />
+      </div>
+
+      <div>
+        <label for="description" class="block text-hibiscus font-semibold text-sm mb-1">Description</label>
+        <textarea id="description" name="description" rows="3" class="ym-input" placeholder="Décrivez le bien…"></textarea>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-5">
+        <div>
+          <label for="category_id" class="block text-hibiscus font-semibold text-sm mb-1">Catégorie *</label>
+          <select id="category_id" name="category_id" required class="ym-input"></select>
+        </div>
+        <div id="agency-wrap">
+          <label for="agency_id" class="block text-hibiscus font-semibold text-sm mb-1">Agence *</label>
+          <select id="agency_id" name="agency_id" required class="ym-input"></select>
+        </div>
+      </div>
+
+      <div id="status-wrap" class="hidden">
+        <label for="status" class="block text-hibiscus font-semibold text-sm mb-1">Statut</label>
+        <select id="status" name="status" class="ym-input"></select>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-5">
+        <div>
+          <label for="price" class="block text-hibiscus font-semibold text-sm mb-1">Prix (€) *</label>
+          <input id="price" name="price" type="number" min="0" step="1000" required class="ym-input" />
+        </div>
+        <div>
+          <label for="area" class="block text-hibiscus font-semibold text-sm mb-1">Surface (m²) *</label>
+          <input id="area" name="area" type="number" min="1" step="1" required class="ym-input" />
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-5">
+        <div><label for="rooms" class="block text-hibiscus font-semibold text-sm mb-1">Pièces</label><input id="rooms" name="rooms" type="number" min="0" class="ym-input" /></div>
+        <div><label for="bedrooms" class="block text-hibiscus font-semibold text-sm mb-1">Chambres</label><input id="bedrooms" name="bedrooms" type="number" min="0" class="ym-input" /></div>
+        <div><label for="bathrooms" class="block text-hibiscus font-semibold text-sm mb-1">Salles de bain</label><input id="bathrooms" name="bathrooms" type="number" min="0" class="ym-input" /></div>
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-5">
+        <div><label for="floor" class="block text-hibiscus font-semibold text-sm mb-1">Étage</label><input id="floor" name="floor" type="number" class="ym-input" /></div>
+        <div><label for="build_year" class="block text-hibiscus font-semibold text-sm mb-1">Année</label><input id="build_year" name="build_year" type="number" min="1700" class="ym-input" /></div>
+        <div><label for="energy_rating" class="block text-hibiscus font-semibold text-sm mb-1">DPE</label><select id="energy_rating" name="energy_rating" class="ym-input"></select></div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-5">
+        <div><label for="address" class="block text-hibiscus font-semibold text-sm mb-1">Adresse</label><input id="address" name="address" type="text" class="ym-input" /></div>
+        <div><label for="ghg_rating" class="block text-hibiscus font-semibold text-sm mb-1">GES</label><select id="ghg_rating" name="ghg_rating" class="ym-input"></select></div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-5">
+        <div><label for="city" class="block text-hibiscus font-semibold text-sm mb-1">Ville *</label><input id="city" name="city" type="text" required class="ym-input" /></div>
+        <div><label for="postal_code" class="block text-hibiscus font-semibold text-sm mb-1">Code postal *</label><input id="postal_code" name="postal_code" type="text" required class="ym-input" /></div>
+      </div>
+
+      <label class="flex items-center gap-2">
+        <input id="is_exclusive" name="is_exclusive" type="checkbox" class="w-4 h-4 accent-hibiscus" />
+        <span class="text-sm">Bien en exclusivité YMMO</span>
+      </label>
+
+      <p id="form-error" class="hidden text-sm text-hibiscus bg-hibiscus/10 border border-hibiscus/30 rounded-md px-3 py-2" role="alert"></p>
+
+      <div class="flex items-center gap-3 pt-2">
+        <button type="submit" id="submit-btn" class="bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-8 py-2.5 rounded-lg transition-colors">Publier</button>
+        <button type="button" id="delete-btn" class="hidden border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white font-medium px-6 py-2.5 rounded-lg transition-colors">Supprimer</button>
+      </div>
+    </form>
+  </main>
+
+  <style>
+    .ym-input { width:100%; border-radius:0.375rem; border:1px solid rgba(182,55,83,.6); background:#fff; padding:0.5rem 0.75rem; font-size:0.875rem; }
+    .ym-input:focus { outline:none; border-color:#b63753; box-shadow:0 0 0 2px rgba(182,55,83,.25); }
+  </style>
+
+  <script type="module" src="./js/property-form.js"></script>
+</body>
+</html>

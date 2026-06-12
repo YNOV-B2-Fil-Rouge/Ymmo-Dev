@@ -56,8 +56,9 @@ function primaryPhoto(p) {
 function propertyCard(p) {
   const [label, classes] = STATUS[p.status] || [p.status, "bg-slate2/20 text-slate2"];
   const area = p.area != null ? ` - ${p.area} m²` : "";
+  // On the dashboard, a card leads to the edit form (management view).
   return `
-    <a href="./property.html?id=${p.id}" class="group block rounded-xl border border-hibiscus/40 bg-white overflow-hidden hover:shadow-lg transition-all">
+    <a href="./property-form.html?id=${p.id}" class="group block rounded-xl border border-hibiscus/40 bg-white overflow-hidden hover:shadow-lg transition-all">
       <div class="relative overflow-hidden">
         <img src="${primaryPhoto(p)}" alt="${escapeHtml(p.title)}" loading="lazy" class="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300" />
         <span class="absolute top-2 left-2 text-xs font-semibold px-2.5 py-1 rounded-full ${classes}">${label}</span>
