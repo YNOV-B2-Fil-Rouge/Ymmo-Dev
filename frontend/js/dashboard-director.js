@@ -12,6 +12,15 @@ if (!isLoggedIn() || !ALLOWED.includes(me.role)) {
 }
 const isHQ = me.role === "HQ";
 
+// HQ sees a national view with agency-oriented labels.
+const AGENCIES = { 1: "Ymmo Siège (Aix)", 2: "Ymmo Paris", 3: "Ymmo Lyon", 4: "Ymmo Marseille" };
+if (isHQ) {
+  document.querySelector('[data-tab="perf"]').textContent = "Performance globale";
+  document.querySelector('[data-tab="biens"]').textContent = "Gestion des agences";
+  document.getElementById("perf-title").textContent = "Performance globale";
+  document.getElementById("biens-title").textContent = "Gestion des agences";
+}
+
 const euro = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -138,14 +147,35 @@ async function renderNationalAnalysis() {
   } catch { document.getElementById("popular-list").innerHTML = `<li class="text-slate2">Indisponible.</li>`; }
 }
 
+// HQ only: a per-agency summary (properties grouped by agency).
+function renderAgenciesOverview(props) {
+  const box = document.getElementById("agencies-overview");
+  const byAgency = {};
+  props.forEach((p) => {
+    const a = (byAgency[p.agency_id] ||= { total: 0, available: 0, sold: 0 });
+    a.total++;
+    if (p.status === "AVAILABLE") a.available++;
+    if (p.status === "SOLD") a.sold++;
+  });
+  const rows = Object.entries(byAgency).map(([id, a]) => [
+    escapeHtml(AGENCIES[id] || `Agence #${id}`), a.total, a.available, a.sold,
+  ]);
+  box.innerHTML = `<h3 class="font-semibold text-hibiscus mb-3">Synthèse par agence</h3>${table(["Agence", "Biens", "Disponibles", "Vendus"], rows)}`;
+  box.classList.remove("hidden");
+}
+
 async function loadProperties() {
   const grid = document.getElementById("biens-grid");
   try {
     const { data } = await api.allProperties();
     grid.innerHTML = data.length ? data.map(propertyCard).join("") : `<p class="text-slate2">Aucun bien.</p>`;
     renderKpis(data);
-    if (isHQ) renderNationalAnalysis();
-    else renderAgencyAnalysis(data);
+    if (isHQ) {
+      renderAgenciesOverview(data);
+      renderNationalAnalysis();
+    } else {
+      renderAgencyAnalysis(data);
+    }
   } catch {
     grid.innerHTML = `<p class="text-slate2">Impossible de charger les biens.</p>`;
   }
