@@ -55,6 +55,10 @@ export const api = {
 
   // --- Messaging ---
   startConversation: (payload) => request("/conversations", { method: "POST", body: payload, auth: true }),
+  listConversations: () => request("/conversations", { auth: true }),
+  getMessages: (id) => request(`/conversations/${id}/messages`, { auth: true }),
+  sendMessage: (id, body) => request(`/conversations/${id}/messages`, { method: "POST", body: { body }, auth: true }),
+  unreadCount: () => request("/messages/unread-count", { auth: true }),
 };
 
 // ----- Python Data/AI service (separate base URL) -----
