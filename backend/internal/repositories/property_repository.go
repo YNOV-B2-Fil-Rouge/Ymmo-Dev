@@ -72,6 +72,18 @@ func (r *PropertyRepository) ListByAgent(agentID uint) ([]models.Property, error
 	return properties, err
 }
 
+// ListAll returns every property, ALL statuses — for the director/HQ
+// management view.
+func (r *PropertyRepository) ListAll() ([]models.Property, error) {
+	var properties []models.Property
+	err := r.db.
+		Preload("Category").
+		Preload("Photos").
+		Order("created_at DESC").
+		Find(&properties).Error
+	return properties, err
+}
+
 // IncrementViewCount bumps the fast popularity counter by one.
 func (r *PropertyRepository) IncrementViewCount(id uint) error {
 	return r.db.Model(&models.Property{}).Where("id = ?", id).

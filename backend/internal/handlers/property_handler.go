@@ -76,6 +76,24 @@ func (h *PropertyHandler) ListMine(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
+// ListAll returns every property (all statuses) for director/HQ management.
+// @Summary      List all properties (management)
+// @Tags         properties
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Router       /management/properties [get]
+func (h *PropertyHandler) ListAll(c *gin.Context) {
+	items, err := h.svc.ListAll()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch properties"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": items})
+}
+
 // Get returns a single property and records a view.
 // @Summary      Get a property by id
 // @Description  Returns the property and increments its view counter.

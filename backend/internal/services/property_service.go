@@ -52,6 +52,11 @@ func (s *PropertyService) ListMine(agentID uint) ([]models.Property, error) {
 	return s.properties.ListByAgent(agentID)
 }
 
+// ListAll returns every property (all statuses) for the management view.
+func (s *PropertyService) ListAll() ([]models.Property, error) {
+	return s.properties.ListAll()
+}
+
 // Get returns a property and records a view (popularity tracking).
 func (s *PropertyService) Get(id uint) (*models.Property, error) {
 	property, err := s.properties.FindByID(id)

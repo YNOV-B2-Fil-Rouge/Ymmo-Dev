@@ -50,6 +50,19 @@ func (r *UserRepository) FindByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
+// ListInternal returns the company's internal staff (the collaborator
+// directory), with their role preloaded.
+func (r *UserRepository) ListInternal() ([]models.User, error) {
+	var users []models.User
+	err := r.db.
+		Preload("Role").
+		Joins("JOIN roles ON roles.id = users.role_id").
+		Where("roles.is_internal = ?", true).
+		Order("users.last_name").
+		Find(&users).Error
+	return users, err
+}
+
 // ExistsByEmail reports whether an account already uses this email.
 func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
 	var count int64

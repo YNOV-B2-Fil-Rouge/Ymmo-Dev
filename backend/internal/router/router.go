@@ -61,6 +61,9 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	authService := services.NewAuthService(userRepo, roleRepo, cfg.JWTSecret)
 	authHandler := handlers.NewAuthHandler(authService)
 
+	userService := services.NewUserService(userRepo)
+	userHandler := handlers.NewUserHandler(userService)
+
 	propertyRepo := repositories.NewPropertyRepository(db)
 	propertyService := services.NewPropertyService(propertyRepo)
 	propertyHandler := handlers.NewPropertyHandler(propertyService)
@@ -146,6 +149,14 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		meGroup.Use(middleware.Auth(cfg.JWTSecret))
 		{
 			meGroup.GET("/properties", middleware.RequireRole("AGENT", "DIRECTOR", "HQ"), propertyHandler.ListMine)
+		}
+
+		// Management views (director / HQ): all properties + collaborators.
+		mgmt := api.Group("/management")
+		mgmt.Use(middleware.Auth(cfg.JWTSecret), middleware.RequireRole("DIRECTOR", "HQ"))
+		{
+			mgmt.GET("/properties", propertyHandler.ListAll)
+			mgmt.GET("/collaborators", userHandler.ListCollaborators)
 		}
 
 		// Messaging: any authenticated user, restricted to their own threads.
