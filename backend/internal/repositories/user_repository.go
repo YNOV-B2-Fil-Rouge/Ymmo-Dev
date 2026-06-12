@@ -63,6 +63,13 @@ func (r *UserRepository) ListInternal() ([]models.User, error) {
 	return users, err
 }
 
+// ListAll returns every user (for IT user management), role preloaded.
+func (r *UserRepository) ListAll() ([]models.User, error) {
+	var users []models.User
+	err := r.db.Preload("Role").Order("users.last_name").Find(&users).Error
+	return users, err
+}
+
 // ListInternalByAgency returns the internal staff of a single agency.
 func (r *UserRepository) ListInternalByAgency(agencyID uint16) ([]models.User, error) {
 	var users []models.User

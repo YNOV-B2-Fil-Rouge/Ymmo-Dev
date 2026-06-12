@@ -14,6 +14,11 @@ func NewUserService(users *repositories.UserRepository) *UserService {
 	return &UserService{users: users}
 }
 
+// ListAllUsers returns every user (IT user management).
+func (s *UserService) ListAllUsers() ([]models.User, error) {
+	return s.users.ListAll()
+}
+
 // ListCollaborators returns the staff directory: nationwide for HQ, agency-
 // scoped for a director.
 func (s *UserService) ListCollaborators(userID uint, role string) ([]models.User, error) {

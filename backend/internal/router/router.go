@@ -64,6 +64,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	userService := services.NewUserService(userRepo)
 	userHandler := handlers.NewUserHandler(userService)
 
+	permissionRepo := repositories.NewPermissionRepository(db)
+	permissionService := services.NewPermissionService(permissionRepo)
+	permissionHandler := handlers.NewPermissionHandler(permissionService)
+
 	propertyRepo := repositories.NewPropertyRepository(db)
 	propertyService := services.NewPropertyService(propertyRepo, userRepo)
 	propertyHandler := handlers.NewPropertyHandler(propertyService)
@@ -151,12 +155,15 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			meGroup.GET("/properties", middleware.RequireRole("AGENT", "DIRECTOR", "HQ"), propertyHandler.ListMine)
 		}
 
-		// Management views (director / HQ): all properties + collaborators.
+		// Management views. Roles are applied per route (directors manage
+		// properties, IT administers users & access rights, etc.).
 		mgmt := api.Group("/management")
-		mgmt.Use(middleware.Auth(cfg.JWTSecret), middleware.RequireRole("DIRECTOR", "HQ"))
+		mgmt.Use(middleware.Auth(cfg.JWTSecret))
 		{
-			mgmt.GET("/properties", propertyHandler.ListAll)
-			mgmt.GET("/collaborators", userHandler.ListCollaborators)
+			mgmt.GET("/properties", middleware.RequireRole("DIRECTOR", "HQ"), propertyHandler.ListAll)
+			mgmt.GET("/collaborators", middleware.RequireRole("DIRECTOR", "HQ", "IT"), userHandler.ListCollaborators)
+			mgmt.GET("/users", middleware.RequireRole("IT", "HQ"), userHandler.ListAll)
+			mgmt.GET("/permissions", middleware.RequireRole("IT", "HQ"), permissionHandler.GetMatrix)
 		}
 
 		// Messaging: any authenticated user, restricted to their own threads.
