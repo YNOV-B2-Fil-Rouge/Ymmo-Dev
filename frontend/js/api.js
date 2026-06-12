@@ -52,6 +52,10 @@ export const api = {
   updateProperty: (id, payload) => request(`/properties/${id}`, { method: "PUT", body: payload, auth: true }),
   deleteProperty: (id) => request(`/properties/${id}`, { method: "DELETE", auth: true }),
 
+  // --- Management (director / HQ) ---
+  allProperties: () => request("/management/properties", { auth: true }),
+  collaborators: () => request("/management/collaborators", { auth: true }),
+
   // --- Planning ---
   listVisits: () => request("/visits", { auth: true }),
   listMeetings: () => request("/meetings", { auth: true }),
@@ -85,4 +89,7 @@ async function aiRequest(path, { method = "GET", body } = {}) {
 export const ai = {
   estimate: (payload) => aiRequest("/estimate", { method: "POST", body: payload }),
   dashboardKpis: () => aiRequest("/dashboard/kpis"),
+  trends: (city) => aiRequest(city ? `/trends?city=${encodeURIComponent(city)}` : "/trends"),
+  zones: () => aiRequest("/zones"),
+  popular: (limit = 6) => aiRequest(`/popular?limit=${limit}`),
 };
