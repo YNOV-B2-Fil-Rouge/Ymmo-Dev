@@ -141,6 +141,13 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		// Current user's favorites list.
 		api.GET("/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.List)
 
+		// Agent's own properties (all statuses) for the dashboard.
+		meGroup := api.Group("/me")
+		meGroup.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			meGroup.GET("/properties", middleware.RequireRole("AGENT", "DIRECTOR", "HQ"), propertyHandler.ListMine)
+		}
+
 		// Messaging: any authenticated user, restricted to their own threads.
 		messaging := api.Group("")
 		messaging.Use(middleware.Auth(cfg.JWTSecret))

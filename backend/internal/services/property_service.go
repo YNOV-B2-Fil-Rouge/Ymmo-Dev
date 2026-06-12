@@ -47,6 +47,11 @@ func (s *PropertyService) Search(q dto.PropertySearchQuery) ([]models.Property, 
 	return items, meta, nil
 }
 
+// ListMine returns the agent's own properties (all statuses).
+func (s *PropertyService) ListMine(agentID uint) ([]models.Property, error) {
+	return s.properties.ListByAgent(agentID)
+}
+
 // Get returns a property and records a view (popularity tracking).
 func (s *PropertyService) Get(id uint) (*models.Property, error) {
 	property, err := s.properties.FindByID(id)

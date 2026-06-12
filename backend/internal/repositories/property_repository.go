@@ -59,6 +59,19 @@ func (r *PropertyRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Property{}, id).Error
 }
 
+// ListByAgent returns every property assigned to an agent, ALL statuses
+// (drafts, sold, ...) — used by the agent dashboard "My properties".
+func (r *PropertyRepository) ListByAgent(agentID uint) ([]models.Property, error) {
+	var properties []models.Property
+	err := r.db.
+		Where("agent_id = ?", agentID).
+		Preload("Category").
+		Preload("Photos").
+		Order("created_at DESC").
+		Find(&properties).Error
+	return properties, err
+}
+
 // IncrementViewCount bumps the fast popularity counter by one.
 func (r *PropertyRepository) IncrementViewCount(id uint) error {
 	return r.db.Model(&models.Property{}).Where("id = ?", id).

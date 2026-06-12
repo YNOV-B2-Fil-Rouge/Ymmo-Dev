@@ -57,6 +57,25 @@ func (h *PropertyHandler) List(c *gin.Context) {
 	})
 }
 
+// ListMine returns the current agent's properties (all statuses, staff only).
+// @Summary      List my properties
+// @Tags         properties
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Router       /me/properties [get]
+func (h *PropertyHandler) ListMine(c *gin.Context) {
+	agentID := middleware.CurrentUserID(c)
+	items, err := h.svc.ListMine(agentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch your properties"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": items})
+}
+
 // Get returns a single property and records a view.
 // @Summary      Get a property by id
 // @Description  Returns the property and increments its view counter.
