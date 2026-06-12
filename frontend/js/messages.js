@@ -34,19 +34,26 @@ function otherParty(conv) {
   return { name, role };
 }
 
+// The property a conversation is about (empty string if none).
+function propertyLabel(conv) {
+  return conv.property ? conv.property.title : "";
+}
+
 // ----- Conversation list -----
 function renderList(conversations) {
   empty.classList.toggle("hidden", conversations.length > 0);
   list.innerHTML = conversations
     .map((conv) => {
       const { name, role } = otherParty(conv);
+      const property = propertyLabel(conv);
       const active = conv.id === activeId;
       return `
         <li>
           <button data-id="${conv.id}"
-            class="conv-item w-full text-left rounded-lg px-4 py-3 font-semibold border transition-colors
+            class="conv-item w-full text-left rounded-lg px-4 py-3 border transition-colors
                    ${active ? "bg-hibiscus text-white border-hibiscus" : "border-hibiscus text-hibiscus hover:bg-hibiscus/10"}">
-            ${escapeHtml(name)} <span class="font-normal opacity-80">( ${role} )</span>
+            <span class="font-semibold">${escapeHtml(name)}</span> <span class="font-normal opacity-80">( ${role} )</span>
+            ${property ? `<span class="block text-xs font-normal opacity-80 mt-0.5">${escapeHtml(property)}</span>` : ""}
           </button>
         </li>`;
     })
@@ -67,7 +74,8 @@ async function openConversation(conv) {
   activeId = conv.id;
 
   const { name, role } = otherParty(conv);
-  header.textContent = `${name} ( ${role} )`;
+  const property = propertyLabel(conv);
+  header.innerHTML = `<span>${escapeHtml(name)} ( ${role} )</span>${property ? `<span class="block text-sm font-normal text-slate2">${escapeHtml(property)}</span>` : ""}`;
   header.classList.remove("hidden");
   sendForm.classList.remove("hidden");
   placeholder.classList.add("hidden");
