@@ -124,7 +124,8 @@ const searchForm = document.getElementById("search-form");
 searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const q = searchForm.q.value.trim();
-  loadCatalogue(q ? { city: q } : {});
+  // The home search bar leads to the dedicated search page.
+  window.location.href = q ? `./recherche.html?city=${encodeURIComponent(q)}` : "./recherche.html";
 });
 
 loadCatalogue();
