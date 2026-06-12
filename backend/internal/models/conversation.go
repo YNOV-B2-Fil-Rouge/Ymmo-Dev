@@ -11,9 +11,11 @@ type Conversation struct {
 	AgentID    uint      `gorm:"column:agent_id" json:"agent_id"`
 	CreatedAt  time.Time `gorm:"column:created_at" json:"created_at"`
 
-	// Participants (preloaded so the UI can show names without extra calls).
-	Client *User `gorm:"foreignKey:ClientID" json:"client,omitempty"`
-	Agent  *User `gorm:"foreignKey:AgentID" json:"agent,omitempty"`
+	// Participants + property context (preloaded so the UI can show names and
+	// distinguish threads that share the same agent but a different property).
+	Client   *User     `gorm:"foreignKey:ClientID" json:"client,omitempty"`
+	Agent    *User     `gorm:"foreignKey:AgentID" json:"agent,omitempty"`
+	Property *Property `gorm:"foreignKey:PropertyID" json:"property,omitempty"`
 
 	Messages []Message `gorm:"foreignKey:ConversationID" json:"messages,omitempty"`
 }

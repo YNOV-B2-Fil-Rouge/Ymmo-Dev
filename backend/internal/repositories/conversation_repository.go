@@ -62,6 +62,7 @@ func (r *ConversationRepository) ListForUser(userID uint) ([]models.Conversation
 	err := r.db.
 		Preload("Client").
 		Preload("Agent").
+		Preload("Property").
 		Where("client_id = ? OR agent_id = ?", userID, userID).
 		Order("created_at DESC").
 		Find(&conversations).Error
