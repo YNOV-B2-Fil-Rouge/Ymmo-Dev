@@ -2,6 +2,7 @@
 // AI insight box, and the "contact an agent" action.
 import { api, ai } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
+import { favoriteIdSet, heartIcon, toggleFavorite } from "./favorites.js";
 
 document.getElementById("year").textContent = new Date().getFullYear();
 
@@ -92,11 +93,50 @@ function render(property) {
         Contacter un agent
       </button>
       <p id="contact-msg" class="hidden mt-3 text-sm text-center" role="status"></p>
+
+      <!-- Favorite -->
+      <button id="fav-btn" aria-pressed="false"
+        class="mt-3 w-full border border-hibiscus text-hibiscus hover:bg-hibiscus/10 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
+        ${heartIcon(false)}<span class="fav-label">Ajouter aux favoris</span>
+      </button>
     </div>`;
 
   wireGallery();
   loadAiInsight(property);
   wireContact(property);
+  wireFavorite(property);
+}
+
+// Favorite toggle on the detail page.
+async function wireFavorite(property) {
+  const btn = document.getElementById("fav-btn");
+  const setBtn = (fav) => {
+    btn.setAttribute("aria-pressed", String(fav));
+    btn.querySelector(".fav-label").textContent = fav ? "Retirer des favoris" : "Ajouter aux favoris";
+    btn.querySelector("svg")?.remove();
+    btn.insertAdjacentHTML("afterbegin", heartIcon(fav));
+  };
+
+  let fav = false;
+  if (isLoggedIn()) {
+    fav = (await favoriteIdSet()).has(property.id);
+    setBtn(fav);
+  }
+
+  btn.addEventListener("click", async () => {
+    if (!isLoggedIn()) {
+      window.location.href = "./auth.html";
+      return;
+    }
+    btn.disabled = true;
+    try {
+      fav = await toggleFavorite(property.id, fav);
+      setBtn(fav);
+    } catch {
+      /* keep previous state */
+    }
+    btn.disabled = false;
+  });
 }
 
 // Thumbnail click swaps the main image.

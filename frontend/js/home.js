@@ -1,6 +1,7 @@
 // Home page: nav state, catalogue loading from the API, and search.
 import { api } from "./api.js";
-import { currentUser, logout } from "./auth.js";
+import { currentUser, logout, isLoggedIn } from "./auth.js";
+import { favoriteIdSet, heartIcon, toggleFavorite } from "./favorites.js";
 
 // ---------- Footer year ----------
 document.getElementById("year").textContent = new Date().getFullYear();
@@ -35,7 +36,7 @@ function primaryPhoto(property) {
   return main ? main.url : "https://placehold.co/600x400?text=Ymmo";
 }
 
-function card(property) {
+function card(property, isFav = false) {
   const title = escapeHtml(property.title);
   const area = property.area != null ? `${property.area} m²` : "";
   const badge = property.is_exclusive
@@ -49,6 +50,10 @@ function card(property) {
         <img src="${primaryPhoto(property)}" alt="${title}" loading="lazy"
              class="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-300" />
         ${badge}
+        <button class="fav-btn absolute top-2 left-2 w-9 h-9 rounded-full bg-white/90 text-hibiscus flex items-center justify-center shadow hover:bg-white transition-colors"
+                data-id="${property.id}" aria-pressed="${isFav}" aria-label="${isFav ? "Retirer des favoris" : "Ajouter aux favoris"}">
+          ${heartIcon(isFav)}
+        </button>
       </div>
       <div class="p-4">
         <h2 class="font-semibold text-midnight">${title}${area ? ` - ${area}` : ""}</h2>
@@ -72,13 +77,39 @@ async function loadCatalogue(params = {}) {
   empty.classList.add("hidden");
 
   try {
-    const { data } = await api.listProperties(qs ? `?${qs}` : "");
-    grid.innerHTML = data.map(card).join("");
-    empty.classList.toggle("hidden", data.length > 0);
+    const [favSet, res] = await Promise.all([
+      favoriteIdSet(),
+      api.listProperties(qs ? `?${qs}` : ""),
+    ]);
+    grid.innerHTML = res.data.map((p) => card(p, favSet.has(p.id))).join("");
+    empty.classList.toggle("hidden", res.data.length > 0);
   } catch (err) {
     grid.innerHTML = `<p class="col-span-full text-center text-slate2 py-10">Impossible de charger les biens. L'API est-elle démarrée ?</p>`;
   }
 }
+
+// Favorite toggle via event delegation (the grid element persists across loads).
+grid.addEventListener("click", async (e) => {
+  const btn = e.target.closest(".fav-btn");
+  if (!btn) return;
+  e.preventDefault();
+  if (!isLoggedIn()) {
+    window.location.href = "./auth.html";
+    return;
+  }
+  const id = Number(btn.dataset.id);
+  const wasFav = btn.getAttribute("aria-pressed") === "true";
+  btn.disabled = true;
+  try {
+    const now = await toggleFavorite(id, wasFav);
+    btn.setAttribute("aria-pressed", String(now));
+    btn.setAttribute("aria-label", now ? "Retirer des favoris" : "Ajouter aux favoris");
+    btn.innerHTML = heartIcon(now);
+  } catch {
+    /* keep previous state on error */
+  }
+  btn.disabled = false;
+});
 
 // ---------- Search ----------
 // The API filters on an exact city for now; a fuzzy text search (city/postal/
