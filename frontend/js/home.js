@@ -12,7 +12,9 @@ const user = currentUser();
 if (user) {
   // Roles allowed to publish a listing.
   const canPublish = ["AGENT", "DIRECTOR", "HQ", "SELLER"].includes(user.role);
+  const isStaff = ["AGENT", "DIRECTOR", "HQ"].includes(user.role);
   account.innerHTML = `
+    ${isStaff ? `<a href="./dashboard.html" class="text-sm font-medium text-midnight hover:text-hibiscus transition-colors">Dashboard</a>` : ""}
     ${canPublish ? `<a href="./property-new.html" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Publier une annonce</a>` : ""}
     <a href="./profile.html" title="Mon profil" aria-label="Mon profil (${escapeHtml(user.first_name)})"
        class="w-9 h-9 rounded-full border border-hibiscus text-hibiscus flex items-center justify-center hover:bg-hibiscus hover:text-white transition-colors">

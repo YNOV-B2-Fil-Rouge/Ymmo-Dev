@@ -47,6 +47,11 @@ export const api = {
   // --- Properties ---
   listProperties: (queryString = "") => request(`/properties${queryString}`),
   getProperty: (id) => request(`/properties/${id}`),
+  myProperties: () => request("/me/properties", { auth: true }),
+
+  // --- Planning ---
+  listVisits: () => request("/visits", { auth: true }),
+  listMeetings: () => request("/meetings", { auth: true }),
 
   // --- Favorites ---
   listFavorites: () => request("/favorites", { auth: true }),
@@ -76,4 +81,5 @@ async function aiRequest(path, { method = "GET", body } = {}) {
 
 export const ai = {
   estimate: (payload) => aiRequest("/estimate", { method: "POST", body: payload }),
+  dashboardKpis: () => aiRequest("/dashboard/kpis"),
 };
