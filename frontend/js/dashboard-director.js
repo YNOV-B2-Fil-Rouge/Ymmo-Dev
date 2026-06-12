@@ -1,5 +1,7 @@
-// Director / HQ dashboard: agency performance, property management,
-// AI strategic analysis, and the collaborator directory.
+// Director / HQ dashboard.
+// A director only sees their own agency (scoping is enforced by the API);
+// HQ gets the national view. KPIs and the director's analysis are computed
+// from the (already scoped) properties, so no other agency's data leaks.
 import { api, ai } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
 
@@ -8,6 +10,7 @@ const me = currentUser() || {};
 if (!isLoggedIn() || !ALLOWED.includes(me.role)) {
   window.location.href = "./index.html";
 }
+const isHQ = me.role === "HQ";
 
 const euro = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -30,9 +33,9 @@ function showTab(name) {
   });
 }
 tabs.forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
-showTab("biens"); // default (matches wireframe)
+showTab("biens");
 
-// ----- Property management -----
+// ----- Shared helpers -----
 const STATUS = {
   DRAFT: ["Brouillon", "bg-slate2/20 text-slate2"], PENDING_REVIEW: ["À valider", "bg-gold/20 text-gold"],
   AVAILABLE: ["Disponible", "bg-green-100 text-green-700"], UNDER_OFFER: ["Sous offre", "bg-gold/20 text-gold"],
@@ -42,6 +45,16 @@ function primaryPhoto(p) {
   const ph = (p.photos || []).find((x) => x.is_primary) || (p.photos || [])[0];
   return ph ? ph.url : "https://placehold.co/600x400?text=Ymmo";
 }
+function table(headers, rows) {
+  return `<table class="w-full text-sm border border-hibiscus/20 rounded-lg overflow-hidden">
+    <thead class="bg-hibiscus/10 text-left"><tr>${headers.map((h) => `<th class="px-3 py-2 font-semibold">${h}</th>`).join("")}</tr></thead>
+    <tbody>${rows.map((r) => `<tr class="border-t border-hibiscus/10">${r.map((c) => `<td class="px-3 py-2">${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+function kpiCard(label, value) {
+  return `<div class="rounded-xl border border-hibiscus/30 bg-white p-4"><p class="text-3xl font-bold text-hibiscus">${value}</p><p class="text-sm text-slate2 mt-1">${label}</p></div>`;
+}
+
+// ----- Properties + KPIs + analysis (all from the scoped data) -----
 function propertyCard(p) {
   const [label, classes] = STATUS[p.status] || [p.status, "bg-slate2/20 text-slate2"];
   return `
@@ -57,41 +70,52 @@ function propertyCard(p) {
       </div>
     </a>`;
 }
-async function loadProperties() {
-  const grid = document.getElementById("biens-grid");
-  try {
-    const { data } = await api.allProperties();
-    grid.innerHTML = data.length ? data.map(propertyCard).join("") : `<p class="text-slate2">Aucun bien.</p>`;
-  } catch {
-    grid.innerHTML = `<p class="text-slate2">Impossible de charger les biens.</p>`;
-  }
+
+function renderKpis(props) {
+  const available = props.filter((p) => p.status === "AVAILABLE");
+  const sold = props.filter((p) => p.status === "SOLD").length;
+  const avg = available.length ? Math.round(available.reduce((s, p) => s + p.price, 0) / available.length) : 0;
+  const views = props.reduce((s, p) => s + (p.view_count || 0), 0);
+  document.getElementById("kpi-grid").innerHTML = [
+    kpiCard("Biens", props.length), kpiCard("Disponibles", available.length),
+    kpiCard("Vendus", sold), kpiCard("Prix moyen", euro.format(avg)), kpiCard("Vues cumulées", views),
+  ].join("");
 }
 
-// ----- Performance KPIs -----
-function kpiCard(label, value) {
-  return `<div class="rounded-xl border border-hibiscus/30 bg-white p-4"><p class="text-3xl font-bold text-hibiscus">${value}</p><p class="text-sm text-slate2 mt-1">${label}</p></div>`;
-}
-async function loadKpis() {
-  const grid = document.getElementById("kpi-grid");
-  try {
-    const k = await ai.dashboardKpis();
-    grid.innerHTML = [
-      kpiCard("Biens au total", k.total_properties), kpiCard("Disponibles", k.available),
-      kpiCard("Vendus", k.sold), kpiCard("Prix moyen", euro.format(k.avg_available_price || 0)),
-      kpiCard("Vues cumulées", k.total_views),
-    ].join("");
-  } catch {
-    grid.innerHTML = `<p class="col-span-full text-slate2">KPIs indisponibles (service IA injoignable).</p>`;
-  }
+// Director: analysis computed from the agency's own properties.
+function renderAgencyAnalysis(props) {
+  // Avg price per m² by category.
+  const byCat = {};
+  props.forEach((p) => {
+    if (!p.area) return;
+    const cat = p.category?.label || "—";
+    (byCat[cat] ||= []).push(p.price / p.area);
+  });
+  const catRows = Object.entries(byCat).map(([cat, arr]) => [
+    escapeHtml(cat), euro.format(Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)), arr.length,
+  ]);
+
+  // Most viewed.
+  const top = [...props].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 6);
+
+  document.getElementById("ia-body").innerHTML = `
+    <div>
+      <h3 class="font-semibold text-hibiscus mb-3">Prix moyen au m² par catégorie (votre agence)</h3>
+      ${catRows.length ? table(["Catégorie", "€/m² moyen", "Biens"], catRows) : '<p class="text-slate2">Pas assez de données.</p>'}
+    </div>
+    <div>
+      <h3 class="font-semibold text-hibiscus mb-3">Vos biens les plus consultés</h3>
+      <ul class="space-y-2">${top.map((p) => `<li class="border border-hibiscus/30 rounded-lg px-4 py-2 bg-white flex justify-between"><span>${escapeHtml(p.title)} — ${escapeHtml(p.city)}</span><span class="text-slate2">${p.view_count || 0} vues</span></li>`).join("")}</ul>
+    </div>`;
 }
 
-// ----- AI strategic analysis -----
-function table(headers, rows) {
-  return `<table class="w-full text-sm border border-hibiscus/20 rounded-lg overflow-hidden">
-    <thead class="bg-hibiscus/10 text-left"><tr>${headers.map((h) => `<th class="px-3 py-2 font-semibold">${h}</th>`).join("")}</tr></thead>
-    <tbody>${rows.map((r) => `<tr class="border-t border-hibiscus/10">${r.map((c) => `<td class="px-3 py-2">${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
-}
-async function loadAi() {
+// HQ: national market analysis from the Python AI service.
+async function renderNationalAnalysis() {
+  const body = document.getElementById("ia-body");
+  body.innerHTML = `
+    <div><h3 class="font-semibold text-hibiscus mb-3">Zones à fort potentiel</h3><div id="zones-table"></div></div>
+    <div><h3 class="font-semibold text-hibiscus mb-3">Tendances de prix (€/m²)</h3><div id="trends-table"></div></div>
+    <div><h3 class="font-semibold text-hibiscus mb-3">Biens les plus consultés</h3><ul id="popular-list" class="space-y-2"></ul></div>`;
   try {
     const z = await ai.zones();
     document.getElementById("zones-table").innerHTML = table(
@@ -99,7 +123,6 @@ async function loadAi() {
       z.data.map((r) => [escapeHtml(r.city), r.listings, r.views_per_listing, euro.format(r.avg_price_per_m2), r.opportunity_score])
     );
   } catch { document.getElementById("zones-table").innerHTML = `<p class="text-slate2">Indisponible.</p>`; }
-
   try {
     const t = await ai.trends();
     document.getElementById("trends-table").innerHTML = table(
@@ -107,7 +130,6 @@ async function loadAi() {
       t.data.map((r) => [escapeHtml(r.city), escapeHtml(r.category), euro.format(r.avg_price_per_m2), r.listings])
     );
   } catch { document.getElementById("trends-table").innerHTML = `<p class="text-slate2">Indisponible.</p>`; }
-
   try {
     const p = await ai.popular(6);
     document.getElementById("popular-list").innerHTML = p.data
@@ -116,18 +138,27 @@ async function loadAi() {
   } catch { document.getElementById("popular-list").innerHTML = `<li class="text-slate2">Indisponible.</li>`; }
 }
 
-// ----- Collaborator directory -----
+async function loadProperties() {
+  const grid = document.getElementById("biens-grid");
+  try {
+    const { data } = await api.allProperties();
+    grid.innerHTML = data.length ? data.map(propertyCard).join("") : `<p class="text-slate2">Aucun bien.</p>`;
+    renderKpis(data);
+    if (isHQ) renderNationalAnalysis();
+    else renderAgencyAnalysis(data);
+  } catch {
+    grid.innerHTML = `<p class="text-slate2">Impossible de charger les biens.</p>`;
+  }
+}
+
+// ----- Collaborators -----
 const ROLE_LABELS = { AGENT: "Agent", DIRECTOR: "Directeur", HQ: "Siège", IT: "IT & Support" };
 async function loadCollaborators() {
   try {
     const { data } = await api.collaborators();
     document.getElementById("collab-table").innerHTML = table(
       ["Nom", "Email", "Rôle"],
-      data.map((u) => [
-        `${escapeHtml(u.last_name)} ${escapeHtml(u.first_name)}`,
-        escapeHtml(u.email),
-        ROLE_LABELS[u.role?.code] || u.role?.code || "",
-      ])
+      data.map((u) => [`${escapeHtml(u.last_name)} ${escapeHtml(u.first_name)}`, escapeHtml(u.email), ROLE_LABELS[u.role?.code] || u.role?.code || ""])
     );
   } catch {
     document.getElementById("collab-table").innerHTML = `<p class="text-slate2">Impossible de charger l'annuaire.</p>`;
@@ -136,6 +167,4 @@ async function loadCollaborators() {
 
 // ----- Boot -----
 loadProperties();
-loadKpis();
-loadAi();
 loadCollaborators();
