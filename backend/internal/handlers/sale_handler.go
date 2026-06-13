@@ -47,6 +47,10 @@ func (h *SaleHandler) Create(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
 		case errors.Is(err, services.ErrBuyerNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "buyer not found"})
+		case errors.Is(err, services.ErrNotABuyer), errors.Is(err, services.ErrPastOffer):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, services.ErrDuplicateSale):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not open sale file"})
 		}
@@ -143,6 +147,8 @@ func (h *SaleHandler) writeAccessError(c *gin.Context, err error) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "you are not involved in this sale file"})
 	case errors.Is(err, services.ErrNotSaleAgent):
 		c.JSON(http.StatusForbidden, gin.H{"error": "only the sale's agent can do this"})
+	case errors.Is(err, services.ErrInvalidSaleTransition):
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid sale status transition (steps must be sequential)"})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not process sale file"})
 	}
