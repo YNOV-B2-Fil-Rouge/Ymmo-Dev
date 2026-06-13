@@ -166,6 +166,24 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			mgmt.GET("/permissions", middleware.RequireRole("IT", "HQ"), permissionHandler.GetMatrix)
 		}
 
+		// AI proxy: the browser talks to the Go API, which relays to the
+		// internal Python service. The AI is never exposed publicly.
+		aiProxy := handlers.NewAIProxy(cfg.AIBaseURL)
+		aiGroup := api.Group("/ai")
+		{
+			// Price estimate is shown on the public property page.
+			aiGroup.POST("/estimate", aiProxy)
+			// Dashboards/analytics are staff-only.
+			staffAI := aiGroup.Group("")
+			staffAI.Use(middleware.Auth(cfg.JWTSecret), middleware.RequireRole("AGENT", "DIRECTOR", "HQ", "IT"))
+			{
+				staffAI.GET("/dashboard/kpis", aiProxy)
+				staffAI.GET("/trends", aiProxy)
+				staffAI.GET("/zones", aiProxy)
+				staffAI.GET("/popular", aiProxy)
+			}
+		}
+
 		// Messaging: any authenticated user, restricted to their own threads.
 		messaging := api.Group("")
 		messaging.Use(middleware.Auth(cfg.JWTSecret))

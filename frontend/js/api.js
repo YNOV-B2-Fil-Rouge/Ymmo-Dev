@@ -77,23 +77,13 @@ export const api = {
   unreadCount: () => request("/messages/unread-count", { auth: true }),
 };
 
-// ----- Python Data/AI service (separate base URL) -----
-async function aiRequest(path, { method = "GET", body } = {}) {
-  const res = await fetch(`${CONFIG.AI_BASE}${path}`, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const isJson = res.headers.get("content-type")?.includes("application/json");
-  const data = isJson ? await res.json() : null;
-  if (!res.ok) throw { status: res.status, data };
-  return data;
-}
-
+// ----- Data/AI: proxied through the Go API (/ai/...) -----
+// The browser never talks to the Python service directly; the Go API relays to
+// it on the internal Docker network.
 export const ai = {
-  estimate: (payload) => aiRequest("/estimate", { method: "POST", body: payload }),
-  dashboardKpis: () => aiRequest("/dashboard/kpis"),
-  trends: (city) => aiRequest(city ? `/trends?city=${encodeURIComponent(city)}` : "/trends"),
-  zones: () => aiRequest("/zones"),
-  popular: (limit = 6) => aiRequest(`/popular?limit=${limit}`),
+  estimate: (payload) => request("/ai/estimate", { method: "POST", body: payload }),
+  dashboardKpis: () => request("/ai/dashboard/kpis", { auth: true }),
+  trends: (city) => request(`/ai/trends${city ? `?city=${encodeURIComponent(city)}` : ""}`, { auth: true }),
+  zones: () => request("/ai/zones", { auth: true }),
+  popular: (limit = 6) => request(`/ai/popular?limit=${limit}`, { auth: true }),
 };

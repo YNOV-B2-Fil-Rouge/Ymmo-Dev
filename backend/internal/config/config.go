@@ -15,6 +15,7 @@ type Config struct {
 	AppEnv    string // "development" | "production"
 	AppPort   string // HTTP port the API listens on
 	JWTSecret string // signing key for JWT (used by the auth module later)
+	AIBaseURL string // internal URL of the Python AI service (proxied)
 
 	DB DBConfig
 }
@@ -46,6 +47,7 @@ func Load() (*Config, error) {
 		AppEnv:    getEnv("APP_ENV", "development"),
 		AppPort:   getEnv("APP_PORT", "8080"),
 		JWTSecret: os.Getenv("JWT_SECRET"),
+		AIBaseURL: getEnv("AI_BASE_URL", "http://ai:8000"),
 		DB: DBConfig{
 			Host:     getEnv("DB_HOST", "127.0.0.1"),
 			Port:     getEnv("DB_PORT", "3306"),
