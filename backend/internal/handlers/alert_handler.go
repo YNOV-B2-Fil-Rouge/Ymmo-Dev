@@ -40,7 +40,14 @@ func (h *AlertHandler) Create(c *gin.Context) {
 	userID := middleware.CurrentUserID(c)
 	alert, err := h.svc.Create(userID, req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create alert"})
+		switch {
+		case errors.Is(err, services.ErrEmptyAlert), errors.Is(err, services.ErrInvalidCategory):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case errors.Is(err, services.ErrDuplicateAlert):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create alert"})
+		}
 		return
 	}
 	c.JSON(http.StatusCreated, alert)
