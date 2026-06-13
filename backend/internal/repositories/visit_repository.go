@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -49,4 +50,15 @@ func (r *VisitRepository) ListForUser(userID uint) ([]models.Visit, error) {
 func (r *VisitRepository) UpdateStatus(id uint, status string) error {
 	return r.db.Model(&models.Visit{}).Where("id = ?", id).
 		Update("status", status).Error
+}
+
+// ExistsForSchedule reports whether a non-cancelled visit already exists for
+// the same property, client and date (duplicate-request guard).
+func (r *VisitRepository) ExistsForSchedule(propertyID, clientID uint, scheduledAt time.Time) (bool, error) {
+	var count int64
+	err := r.db.Model(&models.Visit{}).
+		Where("property_id = ? AND client_id = ? AND scheduled_at = ? AND status <> ?",
+			propertyID, clientID, scheduledAt, models.VisitStatusCancelled).
+		Count(&count).Error
+	return count > 0, err
 }
