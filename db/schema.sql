@@ -200,6 +200,9 @@ CREATE TABLE conversations (
   property_id INT UNSIGNED NULL,            -- property context (may be NULL)
   client_id   INT UNSIGNED NOT NULL,
   agent_id    INT UNSIGNED NOT NULL,
+  -- Soft-delete flags: the row is removed only once BOTH parties have deleted it.
+  client_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  agent_deleted  BOOLEAN NOT NULL DEFAULT FALSE,
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_conv_property FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE SET NULL,
   CONSTRAINT fk_conv_client   FOREIGN KEY (client_id)   REFERENCES users(id),

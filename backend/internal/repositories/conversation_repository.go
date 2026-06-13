@@ -55,15 +55,34 @@ func (r *ConversationRepository) FindExisting(clientID, agentID uint, propertyID
 	return &c, nil
 }
 
-// ListForUser returns every conversation the user takes part in (as client or
-// agent), newest first.
+// ListForUser returns the conversations the user takes part in and has NOT
+// soft-deleted, newest first.
 func (r *ConversationRepository) ListForUser(userID uint) ([]models.Conversation, error) {
 	var conversations []models.Conversation
 	err := r.db.
-		Where("client_id = ? OR agent_id = ?", userID, userID).
+		Where("(client_id = ? AND client_deleted = ?) OR (agent_id = ? AND agent_deleted = ?)",
+			userID, false, userID, false).
 		Order("created_at DESC").
 		Find(&conversations).Error
 	return conversations, err
+}
+
+// SoftDelete marks the conversation as deleted for the requesting participant.
+// When BOTH participants have deleted it, the row (and its messages) is removed.
+func (r *ConversationRepository) SoftDelete(conv *models.Conversation, userID uint) error {
+	if conv.ClientID == userID {
+		conv.ClientDeleted = true
+	} else if conv.AgentID == userID {
+		conv.AgentDeleted = true
+	}
+
+	if conv.ClientDeleted && conv.AgentDeleted {
+		return r.db.Delete(&models.Conversation{}, conv.ID).Error
+	}
+	return r.db.Model(conv).Updates(map[string]interface{}{
+		"client_deleted": conv.ClientDeleted,
+		"agent_deleted":  conv.AgentDeleted,
+	}).Error
 }
 
 // AddMessage inserts a message into a conversation.

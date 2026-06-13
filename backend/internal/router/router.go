@@ -128,6 +128,7 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		{
 			messaging.POST("/conversations", messageHandler.StartConversation)
 			messaging.GET("/conversations", messageHandler.ListConversations)
+			messaging.DELETE("/conversations/:id", messageHandler.Delete)
 			messaging.POST("/conversations/:id/messages", messageHandler.SendMessage)
 			messaging.GET("/conversations/:id/messages", messageHandler.GetMessages)
 			messaging.GET("/messages/unread-count", messageHandler.UnreadCount)

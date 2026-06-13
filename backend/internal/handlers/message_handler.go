@@ -134,6 +134,30 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": messages})
 }
 
+// Delete removes a conversation for the current user (participant only).
+// @Summary      Delete a conversation
+// @Tags         messaging
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path  int  true  "Conversation id"
+// @Success      204  "No Content"
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /conversations/{id} [delete]
+func (h *MessageHandler) Delete(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	userID := middleware.CurrentUserID(c)
+	if err := h.svc.DeleteConversation(userID, id); err != nil {
+		h.writeAccessError(c, err, "could not delete conversation")
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // UnreadCount returns the user's number of unread messages.
 // @Summary      Count my unread messages
 // @Tags         messaging

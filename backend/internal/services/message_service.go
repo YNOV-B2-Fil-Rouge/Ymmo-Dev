@@ -121,6 +121,22 @@ func (s *MessageService) GetMessages(userID, conversationID uint) ([]models.Mess
 	return s.conversations.ListMessages(conversationID)
 }
 
+// DeleteConversation soft-deletes a thread for the requesting participant
+// (removed from the DB only once both parties have deleted it).
+func (s *MessageService) DeleteConversation(userID, conversationID uint) error {
+	conv, err := s.conversations.FindConversation(conversationID)
+	if err != nil {
+		return err
+	}
+	if conv == nil {
+		return ErrConversationNotFound
+	}
+	if conv.ClientID != userID && conv.AgentID != userID {
+		return ErrNotParticipant
+	}
+	return s.conversations.SoftDelete(conv, userID)
+}
+
 // UnreadCount returns how many unread messages the user has.
 func (s *MessageService) UnreadCount(userID uint) (int64, error) {
 	return s.conversations.UnreadCount(userID)
