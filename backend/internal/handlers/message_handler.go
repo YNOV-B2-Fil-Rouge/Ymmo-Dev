@@ -38,14 +38,18 @@ func (h *MessageHandler) StartConversation(c *gin.Context) {
 		return
 	}
 
-	clientID := middleware.CurrentUserID(c)
-	conv, err := h.svc.StartConversation(clientID, req)
+	initiatorID := middleware.CurrentUserID(c)
+	initiatorRole := middleware.CurrentRole(c)
+	conv, err := h.svc.StartConversation(initiatorID, initiatorRole, req)
 	if err != nil {
-		if errors.Is(err, services.ErrAgentNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "agent not found"})
-			return
+		switch {
+		case errors.Is(err, services.ErrReceiverNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "receiver not found"})
+		case errors.Is(err, services.ErrInvalidParticipants):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "a conversation must be between a client and an agent"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not start conversation"})
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not start conversation"})
 		return
 	}
 	c.JSON(http.StatusCreated, conv)
@@ -128,6 +132,30 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": messages})
+}
+
+// Delete removes a conversation for the current user (participant only).
+// @Summary      Delete a conversation
+// @Tags         messaging
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path  int  true  "Conversation id"
+// @Success      204  "No Content"
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /conversations/{id} [delete]
+func (h *MessageHandler) Delete(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	userID := middleware.CurrentUserID(c)
+	if err := h.svc.DeleteConversation(userID, id); err != nil {
+		h.writeAccessError(c, err, "could not delete conversation")
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 // UnreadCount returns the user's number of unread messages.

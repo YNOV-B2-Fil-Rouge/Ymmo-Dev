@@ -9,12 +9,24 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+def _require(key: str) -> str:
+    """Return a required env variable, or fail fast if it is missing.
+
+    No fallback credentials: the service refuses to start without explicit
+    configuration.
+    """
+    value = os.getenv(key)
+    if not value:
+        raise RuntimeError(f"Missing required environment variable: {key}")
+    return value
+
+
 class Settings:
-    DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
-    DB_PORT = os.getenv("DB_PORT", "3306")
-    DB_USER = os.getenv("DB_USER", "ymmo_user")
-    DB_PASSWORD = os.getenv("DB_PASSWORD", "ymmo_pass")
-    DB_NAME = os.getenv("DB_NAME", "ymmo")
+    DB_HOST = _require("DB_HOST")
+    DB_PORT = os.getenv("DB_PORT", "3306")  # port is not a credential
+    DB_USER = _require("DB_USER")
+    DB_PASSWORD = _require("DB_PASSWORD")
+    DB_NAME = _require("DB_NAME")
 
     @property
     def database_url(self) -> str:

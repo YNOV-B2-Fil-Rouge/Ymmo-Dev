@@ -10,7 +10,10 @@ import (
 
 var (
 	ErrConversationNotFound = errors.New("conversation not found")
-	ErrAgentNotFound        = errors.New("agent not found")
+	ErrReceiverNotFound     = errors.New("receiver not found")
+	// ErrInvalidParticipants is returned when the client/agent pairing is not
+	// allowed (talking to yourself, agent↔agent, buyer↔buyer, etc.).
+	ErrInvalidParticipants = errors.New("invalid conversation participants")
 	// ErrNotParticipant guards access: a user may only touch conversations
 	// they are part of (the brief's "secure messaging" requirement).
 	ErrNotParticipant = errors.New("not a participant of this conversation")
@@ -25,19 +28,49 @@ func NewMessageService(conversations *repositories.ConversationRepository, users
 	return &MessageService{conversations: conversations, users: users}
 }
 
-// StartConversation opens a thread between the current user (client) and an
-// agent. If an identical thread already exists, it is returned instead of
-// creating a duplicate.
-func (s *MessageService) StartConversation(clientID uint, req dto.StartConversationRequest) (*models.Conversation, error) {
-	agent, err := s.users.FindByID(req.AgentID)
+// StartConversation opens a thread, enforcing a valid client/agent pairing:
+//   - a client (BUYER/SELLER) may only start a thread with an AGENT;
+//   - an AGENT may only start a thread with a BUYER;
+//   - talking to yourself, agent↔agent or buyer↔buyer is rejected.
+// req.AgentID carries the *receiver* id. If an identical thread already exists
+// it is returned instead of creating a duplicate.
+func (s *MessageService) StartConversation(initiatorID uint, initiatorRole string, req dto.StartConversationRequest) (*models.Conversation, error) {
+	receiverID := req.AgentID
+	if receiverID == initiatorID {
+		return nil, ErrInvalidParticipants
+	}
+
+	receiver, err := s.users.FindByID(receiverID)
 	if err != nil {
 		return nil, err
 	}
-	if agent == nil {
-		return nil, ErrAgentNotFound
+	if receiver == nil {
+		return nil, ErrReceiverNotFound
+	}
+	receiverRole := ""
+	if receiver.Role != nil {
+		receiverRole = receiver.Role.Code
 	}
 
-	existing, err := s.conversations.FindExisting(clientID, req.AgentID, req.PropertyID)
+	// Decide who is the client and who is the agent, based on roles.
+	var clientID, agentID uint
+	switch initiatorRole {
+	case "AGENT":
+		if receiverRole != "BUYER" {
+			return nil, ErrInvalidParticipants
+		}
+		agentID, clientID = initiatorID, receiverID
+	case "BUYER", "SELLER":
+		if receiverRole != "AGENT" {
+			return nil, ErrInvalidParticipants
+		}
+		clientID, agentID = initiatorID, receiverID
+	default:
+		// Directors, HQ, IT... don't start client conversations here.
+		return nil, ErrInvalidParticipants
+	}
+
+	existing, err := s.conversations.FindExisting(clientID, agentID, req.PropertyID)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +80,7 @@ func (s *MessageService) StartConversation(clientID uint, req dto.StartConversat
 
 	conv := &models.Conversation{
 		ClientID:   clientID,
-		AgentID:    req.AgentID,
+		AgentID:    agentID,
 		PropertyID: req.PropertyID,
 	}
 	if err := s.conversations.CreateConversation(conv); err != nil {
@@ -86,6 +119,22 @@ func (s *MessageService) GetMessages(userID, conversationID uint) ([]models.Mess
 		return nil, err
 	}
 	return s.conversations.ListMessages(conversationID)
+}
+
+// DeleteConversation soft-deletes a thread for the requesting participant
+// (removed from the DB only once both parties have deleted it).
+func (s *MessageService) DeleteConversation(userID, conversationID uint) error {
+	conv, err := s.conversations.FindConversation(conversationID)
+	if err != nil {
+		return err
+	}
+	if conv == nil {
+		return ErrConversationNotFound
+	}
+	if conv.ClientID != userID && conv.AgentID != userID {
+		return ErrNotParticipant
+	}
+	return s.conversations.SoftDelete(conv, userID)
 }
 
 // UnreadCount returns how many unread messages the user has.

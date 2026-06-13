@@ -49,3 +49,14 @@ func (r *SaleRepository) ListForUser(userID uint) ([]models.SaleFile, error) {
 func (r *SaleRepository) Update(id uint, updates map[string]interface{}) error {
 	return r.db.Model(&models.SaleFile{}).Where("id = ?", id).Updates(updates).Error
 }
+
+// ExistsActive reports whether a non-cancelled sale already exists for the same
+// property and buyer (duplicate-sale guard).
+func (r *SaleRepository) ExistsActive(propertyID, buyerID uint) (bool, error) {
+	var count int64
+	err := r.db.Model(&models.SaleFile{}).
+		Where("property_id = ? AND buyer_id = ? AND status <> ?",
+			propertyID, buyerID, models.SaleStatusCancelled).
+		Count(&count).Error
+	return count > 0, err
+}

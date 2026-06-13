@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"time"
 
 	"ymmo/internal/dto"
 	"ymmo/internal/models"
@@ -9,11 +10,36 @@ import (
 )
 
 var (
-	ErrSaleNotFound       = errors.New("sale file not found")
-	ErrNotSaleParticipant = errors.New("you are not involved in this sale file")
-	ErrNotSaleAgent       = errors.New("only the sale's agent can do this")
-	ErrBuyerNotFound      = errors.New("buyer not found")
+	ErrSaleNotFound          = errors.New("sale file not found")
+	ErrNotSaleParticipant    = errors.New("you are not involved in this sale file")
+	ErrNotSaleAgent          = errors.New("only the sale's agent can do this")
+	ErrBuyerNotFound         = errors.New("buyer not found")
+	ErrNotABuyer             = errors.New("the buyer_id must reference a buyer")
+	ErrPastOffer             = errors.New("the offer date cannot be in the past")
+	ErrDuplicateSale         = errors.New("a sale file already exists for this property and buyer")
+	ErrInvalidSaleTransition = errors.New("invalid sale status transition")
 )
+
+// saleTransitions defines the allowed forward moves of the sale lifecycle.
+// Cancellation is possible from any non-terminal state; COMPLETED/CANCELLED
+// are terminal.
+var saleTransitions = map[string][]string{
+	models.SaleStatusOffer:               {models.SaleStatusPreliminaryContract, models.SaleStatusCancelled},
+	models.SaleStatusPreliminaryContract: {models.SaleStatusDeed, models.SaleStatusCancelled},
+	models.SaleStatusDeed:                {models.SaleStatusCompleted, models.SaleStatusCancelled},
+}
+
+func isValidSaleTransition(current, next string) bool {
+	if current == next {
+		return true // no-op
+	}
+	for _, allowed := range saleTransitions[current] {
+		if allowed == next {
+			return true
+		}
+	}
+	return false
+}
 
 type SaleService struct {
 	sales      *repositories.SaleRepository
@@ -41,6 +67,24 @@ func (s *SaleService) Create(agentID uint, req dto.CreateSaleRequest) (*models.S
 	}
 	if buyer == nil {
 		return nil, ErrBuyerNotFound
+	}
+	// The buyer_id must really be a buyer (not an agent or any other role).
+	if buyer.Role == nil || buyer.Role.Code != "BUYER" {
+		return nil, ErrNotABuyer
+	}
+
+	// An offer cannot be dated in the past.
+	if req.OfferDate != nil && req.OfferDate.Before(time.Now().Truncate(24*time.Hour)) {
+		return nil, ErrPastOffer
+	}
+
+	// Prevent a duplicate active sale for the same property + buyer.
+	exists, err := s.sales.ExistsActive(req.PropertyID, req.BuyerID)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrDuplicateSale
 	}
 
 	sale := &models.SaleFile{
@@ -89,6 +133,12 @@ func (s *SaleService) Update(userID, saleID uint, req dto.UpdateSaleRequest) (*m
 	}
 	if sale.AgentID != userID {
 		return nil, ErrNotSaleAgent
+	}
+
+	// Enforce a sequential lifecycle: you cannot skip a step (e.g. OFFER →
+	// COMPLETED). Cancellation is allowed from any non-terminal state.
+	if req.Status != nil && !isValidSaleTransition(sale.Status, *req.Status) {
+		return nil, ErrInvalidSaleTransition
 	}
 
 	updates := req.ToUpdates()

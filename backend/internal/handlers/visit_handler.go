@@ -45,11 +45,16 @@ func (h *VisitHandler) Request(c *gin.Context) {
 	}
 
 	clientID := middleware.CurrentUserID(c)
-	visit, err := h.svc.Request(clientID, propertyID, req)
+	clientRole := middleware.CurrentRole(c)
+	visit, err := h.svc.Request(clientID, clientRole, propertyID, req)
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrPropertyNotFound):
 			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
+		case errors.Is(err, services.ErrVisitForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": "you are not allowed to request this visit"})
+		case errors.Is(err, services.ErrPropertyNotAvailable), errors.Is(err, services.ErrDuplicateVisit):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		case errors.Is(err, services.ErrPastSchedule), errors.Is(err, services.ErrNoAgentForProperty):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		default:
@@ -112,6 +117,8 @@ func (h *VisitHandler) UpdateStatus(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "visit not found"})
 		case errors.Is(err, services.ErrNotVisitParticipant):
 			c.JSON(http.StatusForbidden, gin.H{"error": "you are not a participant of this visit"})
+		case errors.Is(err, services.ErrVisitForbidden):
+			c.JSON(http.StatusForbidden, gin.H{"error": "only the agent can confirm or complete a visit"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update visit"})
 		}

@@ -41,11 +41,14 @@ func (h *MeetingHandler) Create(c *gin.Context) {
 	organizerID := middleware.CurrentUserID(c)
 	meeting, err := h.svc.Create(organizerID, req)
 	if err != nil {
-		if errors.Is(err, services.ErrInvalidMeetingTime) {
+		switch {
+		case errors.Is(err, services.ErrInvalidMeetingTime):
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
+		case errors.Is(err, services.ErrDuplicateMeeting):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create meeting"})
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create meeting"})
 		return
 	}
 	c.JSON(http.StatusCreated, meeting)

@@ -13,6 +13,7 @@ var (
 	ErrMeetingNotFound    = errors.New("meeting not found")
 	ErrNotOrganizer       = errors.New("only the organizer can do this")
 	ErrInvalidMeetingTime = errors.New("end must be after start, and start must be in the future")
+	ErrDuplicateMeeting   = errors.New("a meeting already exists at this date and time")
 )
 
 type MeetingService struct {
@@ -27,6 +28,15 @@ func NewMeetingService(meetings *repositories.MeetingRepository) *MeetingService
 func (s *MeetingService) Create(organizerID uint, req dto.CreateMeetingRequest) (*models.Meeting, error) {
 	if !req.EndAt.After(req.StartAt) || req.StartAt.Before(time.Now()) {
 		return nil, ErrInvalidMeetingTime
+	}
+
+	// Prevent the organizer from scheduling two meetings at the same start time.
+	exists, err := s.meetings.ExistsAtTime(organizerID, req.StartAt)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, ErrDuplicateMeeting
 	}
 
 	meeting := &models.Meeting{

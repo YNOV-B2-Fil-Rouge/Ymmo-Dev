@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -33,6 +34,16 @@ func (r *MeetingRepository) AddParticipants(meetingID uint, userIDs []uint) erro
 		rows = append(rows, models.MeetingParticipant{MeetingID: meetingID, UserID: uid})
 	}
 	return r.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&rows).Error
+}
+
+// ExistsAtTime reports whether the organizer already has a meeting starting at
+// the exact same time (duplicate-meeting guard).
+func (r *MeetingRepository) ExistsAtTime(organizerID uint, startAt time.Time) (bool, error) {
+	var count int64
+	err := r.db.Model(&models.Meeting{}).
+		Where("organizer_id = ? AND start_at = ?", organizerID, startAt).
+		Count(&count).Error
+	return count > 0, err
 }
 
 // FindByID returns a meeting with its participants, or nil.
