@@ -48,4 +48,39 @@ func (r *UserRepository) FindByID(id uint) (*models.User, error) {
 func (r *UserRepository) UpdateRole(userID uint, roleID uint8) error {
 	return r.db.Model(&models.User{}).
 		Where("id = ?", userID).
-		Update("
+		Update("role_id", roleID).Error
+}
+
+func (r *UserRepository) ListInternal() ([]models.User, error) {
+	var users []models.User
+	err := r.db.
+		Preload("Role").
+		Joins("JOIN roles ON roles.id = users.role_id").
+		Where("roles.is_internal = ?", true).
+		Order("users.last_name").
+		Find(&users).Error
+	return users, err
+}
+
+func (r *UserRepository) ListAll() ([]models.User, error) {
+	var users []models.User
+	err := r.db.Preload("Role").Order("users.last_name").Find(&users).Error
+	return users, err
+}
+
+func (r *UserRepository) ListInternalByAgency(agencyID uint16) ([]models.User, error) {
+	var users []models.User
+	err := r.db.
+		Preload("Role").
+		Joins("JOIN roles ON roles.id = users.role_id").
+		Where("roles.is_internal = ? AND users.agency_id = ?", true, agencyID).
+		Order("users.last_name").
+		Find(&users).Error
+	return users, err
+}
+
+func (r *UserRepository) ExistsByEmail(email string) (bool, error) {
+	var count int64
+	err := r.db.Model(&models.User{}).Where("email = ?", email).Count(&count).Error
+	return count > 0, err
+}

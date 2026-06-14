@@ -103,3 +103,90 @@ func (s *PropertyService) Create(req dto.CreatePropertyRequest, creatorID uint, 
 		property.Status = models.PropertyStatusPendingReview
 		property.AgentID = nil
 	} else {
+		property.Status = models.PropertyStatusDraft
+		id := creatorID
+		property.AgentID = &id
+	}
+
+	if req.Description != "" {
+		property.Description = &req.Description
+	}
+	if req.EnergyRating != "" {
+		property.EnergyRating = &req.EnergyRating
+	}
+	if req.GhgRating != "" {
+		property.GhgRating = &req.GhgRating
+	}
+	if req.Address != "" {
+		property.Address = &req.Address
+	}
+
+	if err := s.properties.Create(property); err != nil {
+		return nil, err
+	}
+	return property, nil
+}
+
+func (s *PropertyService) ListPending(userID uint, role string) ([]models.Property, error) {
+	if role == "HQ" {
+		return s.properties.ListPending(nil)
+	}
+	user, err := s.users.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil || user.AgencyID == nil {
+		return []models.Property{}, nil
+	}
+	return s.properties.ListPending(user.AgencyID)
+}
+
+func (s *PropertyService) Validate(propertyID, agentID uint) (*models.Property, error) {
+	existing, err := s.properties.FindByID(propertyID)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, ErrPropertyNotFound
+	}
+	if existing.Status != models.PropertyStatusPendingReview {
+		return nil, ErrNotPendingReview
+	}
+	updates := map[string]interface{}{
+		"status":   models.PropertyStatusAvailable,
+		"agent_id": agentID,
+	}
+	if err := s.properties.Update(propertyID, updates); err != nil {
+		return nil, err
+	}
+	return s.properties.FindByID(propertyID)
+}
+
+func (s *PropertyService) Update(id uint, req dto.UpdatePropertyRequest) (*models.Property, error) {
+	existing, err := s.properties.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, ErrPropertyNotFound
+	}
+
+	updates := req.ToUpdates()
+	if len(updates) > 0 {
+		if err := s.properties.Update(id, updates); err != nil {
+			return nil, err
+		}
+	}
+	return s.properties.FindByID(id)
+}
+
+func (s *PropertyService) Delete(id uint) error {
+	existing, err := s.properties.FindByID(id)
+	if err != nil {
+		return err
+	}
+	if existing == nil {
+		return ErrPropertyNotFound
+	}
+	return s.properties.Delete(id)
+}

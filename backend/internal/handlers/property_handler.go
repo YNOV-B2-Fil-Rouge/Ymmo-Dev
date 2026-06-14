@@ -170,3 +170,108 @@ func (h *PropertyHandler) ListPending(c *gin.Context) {
 
 // @Summary      Validate a seller submission
 // @Tags         properties
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Property id"
+// @Success      200  {object}  models.Property
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /properties/{id}/validate [post]
+func (h *PropertyHandler) Validate(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	agentID := middleware.CurrentUserID(c)
+	property, err := h.svc.Validate(id, agentID)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrPropertyNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
+		case errors.Is(err, services.ErrNotPendingReview):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "this property is not awaiting validation"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not validate property"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, property)
+}
+
+// @Summary      Update a property
+// @Description  Staff only. Partial update: only the fields sent are changed.
+// @Tags         properties
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id    path      int                        true  "Property id"
+// @Param        body  body      dto.UpdatePropertyRequest  true  "Fields to update"
+// @Success      200   {object}  models.Property
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Failure      403   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Router       /properties/{id} [put]
+func (h *PropertyHandler) Update(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+
+	var req dto.UpdatePropertyRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input", "details": err.Error()})
+		return
+	}
+
+	property, err := h.svc.Update(id, req)
+	if err != nil {
+		if errors.Is(err, services.ErrPropertyNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update property"})
+		return
+	}
+	c.JSON(http.StatusOK, property)
+}
+
+// @Summary      Delete a property
+// @Description  Staff only.
+// @Tags         properties
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path  int  true  "Property id"
+// @Success      204  "No Content"
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /properties/{id} [delete]
+func (h *PropertyHandler) Delete(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+
+	if err := h.svc.Delete(id); err != nil {
+		if errors.Is(err, services.ErrPropertyNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete property"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+func parseID(c *gin.Context) (uint, bool) {
+	raw := c.Param("id")
+	id, err := strconv.ParseUint(raw, 10, 64)
+	if err != nil || id == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return 0, false
+	}
+	return uint(id), true
+}

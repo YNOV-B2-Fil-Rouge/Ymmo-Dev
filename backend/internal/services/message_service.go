@@ -121,4 +121,19 @@ func (s *MessageService) DeleteConversation(userID, conversationID uint) error {
 }
 
 func (s *MessageService) UnreadCount(userID uint) (int64, error) {
-	ret
+	return s.conversations.UnreadCount(userID)
+}
+
+func (s *MessageService) ensureParticipant(userID, conversationID uint) error {
+	conv, err := s.conversations.FindConversation(conversationID)
+	if err != nil {
+		return err
+	}
+	if conv == nil {
+		return ErrConversationNotFound
+	}
+	if conv.ClientID != userID && conv.AgentID != userID {
+		return ErrNotParticipant
+	}
+	return nil
+}

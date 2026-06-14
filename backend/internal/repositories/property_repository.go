@@ -105,4 +105,73 @@ func (r *PropertyRepository) Search(q dto.PropertySearchQuery) ([]models.Propert
 	query := r.db.Model(&models.Property{})
 
 	if q.Sector != "" {
-		query
+		query = query.Joins("JOIN property_categories pc ON pc.id = properties.category_id").
+			Where("pc.sector = ?", q.Sector)
+	}
+
+	if q.City != "" {
+		query = query.Where("properties.city = ?", q.City)
+	}
+	if q.CategoryID != 0 {
+		query = query.Where("properties.category_id = ?", q.CategoryID)
+	}
+	if q.MinPrice > 0 {
+		query = query.Where("properties.price >= ?", q.MinPrice)
+	}
+	if q.MaxPrice > 0 {
+		query = query.Where("properties.price <= ?", q.MaxPrice)
+	}
+	if q.MinArea > 0 {
+		query = query.Where("properties.area >= ?", q.MinArea)
+	}
+	if q.MaxArea > 0 {
+		query = query.Where("properties.area <= ?", q.MaxArea)
+	}
+	if q.MaxEnergy != "" {
+		query = query.Where("properties.energy_rating <= ?", q.MaxEnergy)
+	}
+
+	status := q.Status
+	if status == "" {
+		status = models.PropertyStatusAvailable
+	}
+	query = query.Where("properties.status = ?", status)
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	switch q.Sort {
+	case "price_asc":
+		query = query.Order("properties.price ASC")
+	case "price_desc":
+		query = query.Order("properties.price DESC")
+	default:
+		query = query.Order("properties.created_at DESC")
+	}
+
+	page := q.Page
+	if page < 1 {
+		page = 1
+	}
+	size := q.PageSize
+	if size < 1 {
+		size = 12
+	}
+	if size > 50 {
+		size = 50
+	}
+
+	var properties []models.Property
+	err := query.
+		Preload("Category").
+		Preload("Photos").
+		Limit(size).
+		Offset((page - 1) * size).
+		Find(&properties).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return properties, total, nil
+}

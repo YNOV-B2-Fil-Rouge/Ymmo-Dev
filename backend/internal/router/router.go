@@ -1,4 +1,4 @@
-// Package router assembles the Gin engine: middleware, wiring and routes.
+// Package router assembles the Gin engine: global middleware + routes.
 package router
 
 import (
@@ -112,4 +112,132 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			properties.GET("", propertyHandler.List)
 			properties.GET("/:id", propertyHandler.Get)
 
-			properties.POST("/:id/favori
+			properties.POST("/:id/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.Add)
+			properties.DELETE("/:id/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.Remove)
+
+			properties.POST("/:id/visits", middleware.Auth(cfg.JWTSecret), visitHandler.Request)
+
+			properties.POST("",
+				middleware.Auth(cfg.JWTSecret),
+				middleware.RequireRole("AGENT", "DIRECTOR", "HQ", "SELLER"),
+				propertyHandler.Create,
+			)
+
+			staff := properties.Group("")
+			staff.Use(
+				middleware.Auth(cfg.JWTSecret),
+				middleware.RequireRole("AGENT", "DIRECTOR", "HQ"),
+			)
+			{
+				staff.PUT("/:id", propertyHandler.Update)
+				staff.DELETE("/:id", propertyHandler.Delete)
+
+				staff.POST("/:id/validate", propertyHandler.Validate)
+
+				staff.POST("/:id/photos", photoHandler.Add)
+				staff.POST("/:id/photos/upload", photoHandler.Upload)
+				staff.DELETE("/:id/photos/:photoId", photoHandler.Delete)
+			}
+		}
+
+		api.GET("/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.List)
+
+		meGroup := api.Group("/me")
+		meGroup.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			meGroup.GET("/properties", middleware.RequireRole("AGENT", "DIRECTOR", "HQ"), propertyHandler.ListMine)
+		}
+
+		mgmt := api.Group("/management")
+		mgmt.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			mgmt.GET("/properties", middleware.RequireRole("DIRECTOR", "HQ"), propertyHandler.ListAll)
+			mgmt.GET("/pending-properties", middleware.RequireRole("AGENT", "DIRECTOR", "HQ"), propertyHandler.ListPending)
+			mgmt.GET("/collaborators", middleware.RequireRole("DIRECTOR", "HQ", "IT"), userHandler.ListCollaborators)
+			mgmt.GET("/users", middleware.RequireRole("IT", "HQ"), userHandler.ListAll)
+			mgmt.GET("/permissions", middleware.RequireRole("IT", "HQ"), permissionHandler.GetMatrix)
+
+			staffReview := middleware.RequireRole("AGENT", "DIRECTOR", "HQ")
+			mgmt.GET("/seller-applications", staffReview, sellerAppHandler.ListPending)
+			mgmt.POST("/seller-applications/:id/approve", staffReview, sellerAppHandler.Approve)
+			mgmt.POST("/seller-applications/:id/reject", staffReview, sellerAppHandler.Reject)
+		}
+
+		sellerApps := api.Group("/seller-applications")
+		sellerApps.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			sellerApps.POST("", sellerAppHandler.Apply)
+			sellerApps.GET("", sellerAppHandler.Mine)
+		}
+
+		aiProxy := handlers.NewAIProxy(cfg.AIBaseURL)
+		aiGroup := api.Group("/ai")
+		{
+			aiGroup.POST("/estimate", aiProxy)
+			aiGroup.POST("/predict-delay", aiProxy)
+			staffAI := aiGroup.Group("")
+			staffAI.Use(middleware.Auth(cfg.JWTSecret), middleware.RequireRole("AGENT", "DIRECTOR", "HQ", "IT"))
+			{
+				staffAI.GET("/dashboard/kpis", aiProxy)
+				staffAI.GET("/trends", aiProxy)
+				staffAI.GET("/zones", aiProxy)
+				staffAI.GET("/popular", aiProxy)
+			}
+		}
+
+		messaging := api.Group("")
+		messaging.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			messaging.POST("/conversations", messageHandler.StartConversation)
+			messaging.GET("/conversations", messageHandler.ListConversations)
+			messaging.DELETE("/conversations/:id", messageHandler.Delete)
+			messaging.POST("/conversations/:id/messages", messageHandler.SendMessage)
+			messaging.GET("/conversations/:id/messages", messageHandler.GetMessages)
+			messaging.GET("/messages/unread-count", messageHandler.UnreadCount)
+		}
+
+		visits := api.Group("")
+		visits.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			visits.GET("/visits", visitHandler.List)
+			visits.PATCH("/visits/:id", visitHandler.UpdateStatus)
+		}
+
+		meetings := api.Group("/meetings")
+		meetings.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			meetings.GET("", meetingHandler.List)
+			meetings.DELETE("/:id", meetingHandler.Delete)
+
+			staffMeetings := meetings.Group("")
+			staffMeetings.Use(middleware.RequireRole("AGENT", "DIRECTOR", "HQ"))
+			{
+				staffMeetings.POST("", meetingHandler.Create)
+			}
+		}
+
+		alerts := api.Group("/alerts")
+		alerts.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			alerts.POST("", alertHandler.Create)
+			alerts.GET("", alertHandler.List)
+			alerts.DELETE("/:id", alertHandler.Delete)
+		}
+
+		sales := api.Group("/sales")
+		sales.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			sales.GET("", saleHandler.List)
+			sales.GET("/:id", saleHandler.Get)
+
+			staffSales := sales.Group("")
+			staffSales.Use(middleware.RequireRole("AGENT", "DIRECTOR", "HQ"))
+			{
+				staffSales.POST("", saleHandler.Create)
+				staffSales.PATCH("/:id", saleHandler.Update)
+			}
+		}
+	}
+
+	return r
+}

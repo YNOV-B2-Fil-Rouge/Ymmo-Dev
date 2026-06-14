@@ -92,3 +92,20 @@ func (r *ConversationRepository) ListMessages(conversationID uint) ([]models.Mes
 		Find(&messages).Error
 	return messages, err
 }
+
+func (r *ConversationRepository) MarkRead(conversationID, readerID uint) error {
+	return r.db.Model(&models.Message{}).
+		Where("conversation_id = ? AND sender_id <> ?", conversationID, readerID).
+		Update("is_read", true).Error
+}
+
+func (r *ConversationRepository) UnreadCount(userID uint) (int64, error) {
+	var n int64
+	err := r.db.Model(&models.Message{}).
+		Joins("JOIN conversations c ON c.id = messages.conversation_id").
+		Where("(c.client_id = ? OR c.agent_id = ?)", userID, userID).
+		Where("messages.sender_id <> ?", userID).
+		Where("messages.is_read = ?", false).
+		Count(&n).Error
+	return n, err
+}

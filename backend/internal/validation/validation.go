@@ -1,4 +1,4 @@
-// Package validation registers the app's custom validators on Gin's
+// Package validation registers the app's custom validators on Gin.
 package validation
 
 import (

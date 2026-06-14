@@ -22,3 +22,22 @@ func NewAIProxy(target string) gin.HandlerFunc {
 		_, _ = w.Write([]byte(`{"error":"AI service unavailable"}`))
 	}
 
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		for _, h := range []string{
+			"Access-Control-Allow-Origin",
+			"Access-Control-Allow-Credentials",
+			"Access-Control-Allow-Methods",
+			"Access-Control-Allow-Headers",
+			"Access-Control-Expose-Headers",
+			"Access-Control-Max-Age",
+		} {
+			resp.Header.Del(h)
+		}
+		return nil
+	}
+
+	return func(c *gin.Context) {
+		c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/api/v1/ai")
+		proxy.ServeHTTP(c.Writer, c.Request)
+	}
+}

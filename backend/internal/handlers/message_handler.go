@@ -160,4 +160,23 @@ func (h *MessageHandler) Delete(c *gin.Context) {
 // @Success      200  {object}  map[string]int
 // @Failure      401  {object}  map[string]string
 // @Router       /messages/unread-count [get]
-func (h *MessageHandler) UnreadCount(c *gin.Context
+func (h *MessageHandler) UnreadCount(c *gin.Context) {
+	userID := middleware.CurrentUserID(c)
+	count, err := h.svc.UnreadCount(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not count unread messages"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"unread": count})
+}
+
+func (h *MessageHandler) writeAccessError(c *gin.Context, err error, fallback string) {
+	switch {
+	case errors.Is(err, services.ErrConversationNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
+	case errors.Is(err, services.ErrNotParticipant):
+		c.JSON(http.StatusForbidden, gin.H{"error": "you are not a participant of this conversation"})
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fallback})
+	}
+}

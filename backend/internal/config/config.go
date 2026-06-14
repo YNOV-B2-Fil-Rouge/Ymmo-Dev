@@ -37,8 +37,6 @@ func (d DBConfig) DSN() string {
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
-
-
 	cfg := &Config{
 		AppEnv:    getEnv("APP_ENV", "development"),
 		AppPort:   getEnv("APP_PORT", "8080"),
@@ -60,4 +58,11 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+func getEnv(key, fallback string) string {
+	if v, ok := os.LookupEnv(key); ok && v != "" {
+		return v
+	}
+	return fallback
 }
