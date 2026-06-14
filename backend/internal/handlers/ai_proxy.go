@@ -25,6 +25,24 @@ func NewAIProxy(target string) gin.HandlerFunc {
 		_, _ = w.Write([]byte(`{"error":"AI service unavailable"}`))
 	}
 
+	// CORS is the Go API's responsibility (it sets the headers globally). The
+	// internal AI service also emits CORS headers; if we forwarded them, the
+	// browser would receive duplicate Access-Control-Allow-Origin values and
+	// reject the response. Strip them here so only the gateway's remain.
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		for _, h := range []string{
+			"Access-Control-Allow-Origin",
+			"Access-Control-Allow-Credentials",
+			"Access-Control-Allow-Methods",
+			"Access-Control-Allow-Headers",
+			"Access-Control-Expose-Headers",
+			"Access-Control-Max-Age",
+		} {
+			resp.Header.Del(h)
+		}
+		return nil
+	}
+
 	return func(c *gin.Context) {
 		// Drop the gateway prefix so the AI service sees /estimate, /zones, …
 		c.Request.URL.Path = strings.TrimPrefix(c.Request.URL.Path, "/api/v1/ai")
