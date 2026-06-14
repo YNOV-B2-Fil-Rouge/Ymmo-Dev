@@ -13,12 +13,14 @@ export async function favoriteIdSet() {
   }
 }
 
-// Heart icon, filled when favorited.
+// Heart icon (symmetric, Feather-style), filled when favorited.
 export function heartIcon(filled) {
-  const path = "M12 21s-7-4.4-9.5-8.6C.9 9.6 2 6 5.2 6c1.9 0 3.1 1 3.8 2 .7-1 1.9-2 3.8-2 3.2 0 4.3 3.6 2.7 6.4C19 16.6 12 21 12 21z";
+  const path =
+    "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z";
+  const common = `width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" class="transition-transform duration-150"`;
   return filled
-    ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="${path}"/></svg>`
-    : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${path}"/></svg>`;
+    ? `<svg ${common} fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="${path}"/></svg>`
+    : `<svg ${common} fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"><path d="${path}"/></svg>`;
 }
 
 // Toggle a favorite. Returns the new state (true = now favorited).
