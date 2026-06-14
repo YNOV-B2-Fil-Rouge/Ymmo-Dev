@@ -84,9 +84,15 @@ Make sure the API is running (`docker compose up -d db api ai`).
 
 ### 🧪 Demo Data (Seed)
 On a **fresh volume**, the database initializes automatically in order:
-1. `db/schema.sql` : tables + reference data (roles, departments, categories, access matrix)
-2. `db/init-ai-user.sh` : the read-only AI database user
-3. `db/seed.sql` : demo data (agencies, test accounts, properties)
+1. `db/schema.sql` : tables
+2. `db/reference-data.sql` : reference data (roles, departments, categories, access matrix)
+3. `db/init-ai-user.sh` : the read-only AI database user
+4. `db/seed.sql` : demo data (agencies, test accounts, properties)
+
+> 🖼️ **Demo Pictures**: The SQL seed contains image URLs, but not the image files themselves. Demo images are provided in the `db/demo_pictures/` folder. To make them appear on the platform:
+> 1. Copy them into the running API container's upload volume with this command:
+>    `docker cp db/demo_pictures/. ymmo-api:/app/uploads/`
+> 2. Hard-refresh your browser (Ctrl+Shift+R).
 
 To start over from scratch:
 ```bash
