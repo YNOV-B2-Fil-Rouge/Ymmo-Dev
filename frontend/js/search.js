@@ -1,11 +1,10 @@
-// Dedicated search page: sidebar filters drive the catalogue query live.
+// Search page: sidebar filters drive the catalogue query live.
 import { api } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
 import { favoriteIdSet, heartIcon, toggleFavorite } from "./favorites.js";
 
 document.getElementById("year").textContent = new Date().getFullYear();
 
-// ----- Header account state -----
 const account = document.getElementById("nav-account");
 const user = currentUser();
 if (user) {
@@ -20,7 +19,6 @@ if (user) {
     <a href="./auth.html#register" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Inscription</a>`;
 }
 
-// ----- Helpers -----
 const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 function primaryPhoto(p) {
   const ph = (p.photos || []).find((x) => x.is_primary) || (p.photos || [])[0];
@@ -43,8 +41,7 @@ function card(p, isFav) {
     </a>`;
 }
 
-// ----- Filter state -----
-const filters = {}; // sector, category_id, min_price, max_price, city, max_energy
+const filters = {};
 const grid = document.getElementById("results-grid");
 const empty = document.getElementById("results-empty");
 
@@ -58,19 +55,16 @@ async function runSearch() {
     const [favSet, res] = await Promise.all([favoriteIdSet(), api.listProperties(qs ? `?${qs}` : "")]);
     grid.innerHTML = res.data.map((p) => card(p, favSet.has(p.id))).join("");
     empty.classList.toggle("hidden", res.data.length > 0);
-    // Announce the result count to assistive technologies.
-    const count = document.getElementById("results-count");
+    const count = document.getElementById("results-count"); // announce result count (a11y)
     if (count) count.textContent = `${res.data.length} bien${res.data.length > 1 ? "s" : ""} trouvé${res.data.length > 1 ? "s" : ""}.`;
   } catch {
     grid.innerHTML = `<p class="col-span-full text-center text-slate2 py-10">Impossible de charger les biens.</p>`;
   }
 }
 
-// Debounce for free-text / number inputs.
 let timer;
 const debouncedSearch = () => { clearTimeout(timer); timer = setTimeout(runSearch, 350); };
 
-// ----- Type buttons (mutually exclusive) -----
 const TYPE_FILTER = {
   residential: { sector: "RESIDENTIAL", category_id: undefined },
   office: { sector: undefined, category_id: 5 },
@@ -97,7 +91,6 @@ document.querySelectorAll(".type-btn").forEach((btn) => {
   });
 });
 
-// ----- Energy buttons (single select) -----
 let activeEnergy = null;
 document.querySelectorAll(".energy-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -113,7 +106,6 @@ document.querySelectorAll(".energy-btn").forEach((btn) => {
   });
 });
 
-// ----- Budget + city -----
 document.getElementById("min-price").addEventListener("input", (e) => { filters.min_price = e.target.value; debouncedSearch(); });
 document.getElementById("max-price").addEventListener("input", (e) => { filters.max_price = e.target.value; debouncedSearch(); });
 document.getElementById("min-area").addEventListener("input", (e) => { filters.min_area = e.target.value; debouncedSearch(); });
@@ -121,11 +113,10 @@ document.getElementById("max-area").addEventListener("input", (e) => { filters.m
 const cityInput = document.getElementById("city");
 cityInput.addEventListener("input", (e) => { filters.city = e.target.value.trim(); debouncedSearch(); });
 
-// Prefill the city from the URL (?city=) when coming from the home search bar.
+// Prefill the city from the URL (?city=) when arriving from the home search bar.
 const initialCity = new URLSearchParams(window.location.search).get("city");
 if (initialCity) { cityInput.value = initialCity; filters.city = initialCity; }
 
-// ----- Favorite toggle (delegation) -----
 grid.addEventListener("click", async (e) => {
   const btn = e.target.closest(".fav-btn");
   if (!btn) return;
@@ -138,11 +129,10 @@ grid.addEventListener("click", async (e) => {
     const now = await toggleFavorite(id, wasFav);
     btn.setAttribute("aria-pressed", String(now));
     btn.innerHTML = heartIcon(now);
-  } catch { /* ignore */ }
+  } catch {}
   btn.disabled = false;
 });
 
-// ----- Create a saved-search alert from the active filters -----
 const alertBtn = document.getElementById("create-alert");
 const alertMsg = document.getElementById("alert-msg");
 const showAlertMsg = (text, cls = "text-hibiscus") => {
@@ -152,8 +142,7 @@ const showAlertMsg = (text, cls = "text-hibiscus") => {
 alertBtn.addEventListener("click", async () => {
   if (!isLoggedIn()) { window.location.href = "./auth.html"; return; }
 
-  // Map the search filters to the alert payload (no "sector" on alerts).
-  const payload = {};
+  const payload = {}; // alerts have no "sector" field
   if (filters.city) payload.city = filters.city;
   if (filters.category_id) payload.category_id = Number(filters.category_id);
   if (filters.min_price) payload.min_price = Number(filters.min_price);

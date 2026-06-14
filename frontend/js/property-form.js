@@ -12,14 +12,12 @@ const editId = new URLSearchParams(window.location.search).get("id");
 if (!isLoggedIn() || (!isStaff && !isSeller)) {
   window.location.href = "./index.html";
 }
-// Sellers can only create (no editing existing listings).
 if (isSeller && editId) {
-  window.location.href = "./profile.html";
+  window.location.href = "./profile.html"; // sellers can only create
 }
-// Where to go after a successful submit.
 const afterSubmitHref = isSeller ? "./profile.html" : "./dashboard.html";
 
-// Reference data (fixed seed values). Could come from API endpoints later.
+// Reference data (fixed seed values).
 const CATEGORIES = [
   { id: 1, label: "Maison" }, { id: 2, label: "Appartement" }, { id: 3, label: "Studio" },
   { id: 4, label: "Terrain" }, { id: 5, label: "Bureau" }, { id: 6, label: "Local commercial" }, { id: 7, label: "Entrepôt" },
@@ -36,7 +34,6 @@ const STATUSES = [
 
 const $ = (id) => document.getElementById(id);
 
-// Populate the selects.
 $("category_id").innerHTML = CATEGORIES.map((c) => `<option value="${c.id}">${c.label}</option>`).join("");
 $("agency_id").innerHTML = AGENCIES.map((a) => `<option value="${a.id}">${a.name}</option>`).join("");
 $("energy_rating").innerHTML = `<option value="">—</option>` + ENERGY.map((e) => `<option value="${e}">${e}</option>`).join("");
@@ -46,15 +43,14 @@ $("status").innerHTML = STATUSES.map((s) => `<option value="${s.v}">${s.l}</opti
 const form = $("property-form");
 const errorBox = $("form-error");
 
-// For a seller, reframe the page as a submission for validation. Sellers can't
-// upload files (the upload route is staff-only), so hide the photo picker.
+// For a seller, reframe as a submission and hide the staff-only photo picker.
 if (isSeller) {
   $("form-title").textContent = "Proposer un bien à la vente";
   $("submit-btn").textContent = "Soumettre pour validation";
   $("create-photos").classList.add("hidden");
 }
 
-// ---------- Edit mode: prefill ----------
+// Edit mode: prefill the form.
 if (editId) {
   $("form-title").textContent = "Modifier le bien";
   $("submit-btn").textContent = "Enregistrer";
@@ -90,7 +86,6 @@ if (editId) {
     }
   });
 
-  // ----- Photos management -----
   $("photos-section").classList.remove("hidden");
 
   $("photo-add").addEventListener("click", async () => {
@@ -113,7 +108,6 @@ if (editId) {
     }
   });
 
-  // Upload an image file from the user's computer.
   $("photo-upload").addEventListener("click", async () => {
     const input = $("photo-file");
     const err = $("photo-error");
@@ -146,14 +140,11 @@ if (editId) {
   });
 }
 
-// Re-fetch the property just to refresh its photo list.
 async function reloadPhotos() {
   try {
     const p = await api.getProperty(editId);
     renderPhotos(p.photos || []);
-  } catch {
-    /* keep current */
-  }
+  } catch {}
 }
 
 function renderPhotos(photos) {
@@ -187,7 +178,6 @@ function renderPhotos(photos) {
   );
 }
 
-// ---------- Helpers ----------
 function showError(msg) {
   errorBox.textContent = msg;
   errorBox.classList.remove("hidden");
@@ -201,7 +191,6 @@ function str(id) {
   return v === "" ? undefined : v;
 }
 
-// ---------- Submit ----------
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorBox.classList.add("hidden");
@@ -239,8 +228,7 @@ form.addEventListener("submit", async (e) => {
       payload.agency_id = Number($("agency_id").value);
       const created = await api.createProperty(payload); // seller -> PENDING_REVIEW, staff -> DRAFT
 
-      // Upload the photos staged in the form to the freshly created property
-      // (the first one becomes the primary). Failures are skipped, not fatal.
+      // Upload the staged photos to the new property (first one = primary).
       const files = $("create-photo-files").files;
       for (let i = 0; i < files.length; i++) {
         const fd = new FormData();
@@ -248,13 +236,10 @@ form.addEventListener("submit", async (e) => {
         if (i === 0) fd.append("is_primary", "true");
         try {
           await api.uploadPhoto(created.id, fd);
-        } catch {
-          /* skip this file */
-        }
+        } catch {}
       }
 
-      // Staff land on the new property's edit page (to manage photos further);
-      // sellers (who can't edit) go back to their profile.
+      // Staff land on the new property's edit page; sellers go back to profile.
       window.location.href = isSeller ? "./profile.html" : `./property-form.html?id=${created.id}`;
     }
   } catch (err) {

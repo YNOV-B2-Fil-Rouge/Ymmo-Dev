@@ -1,12 +1,10 @@
-// Property detail page: fetch one property, render it, wire the gallery, the
-// AI insight box, and the "contact an agent" action.
+// Property detail page: render one property, gallery, AI insight, contact.
 import { api, ai } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
 import { favoriteIdSet, heartIcon, toggleFavorite } from "./favorites.js";
 
 document.getElementById("year").textContent = new Date().getFullYear();
 
-// ----- Header account state -----
 const account = document.getElementById("nav-account");
 const user = currentUser();
 if (user) {
@@ -19,7 +17,6 @@ if (user) {
   account.innerHTML = `<a href="./auth.html" class="text-sm font-medium text-midnight hover:text-hibiscus transition-colors">Connexion</a>`;
 }
 
-// ----- Helpers -----
 const euro = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
 function escapeHtml(value) {
@@ -41,7 +38,6 @@ function detailLine(property) {
   return parts.join(" - ");
 }
 
-// ----- Render -----
 const detail = document.getElementById("detail");
 
 function render(property) {
@@ -121,9 +117,7 @@ function render(property) {
   wireVisit(property);
 }
 
-// Request a visit for this property. The API restricts this to client roles
-// (a buyer/seller, not staff, and not your own listing); we surface its
-// rejection as a friendly message rather than hiding the control.
+// Request a visit (the API restricts this to client roles; errors are surfaced).
 function wireVisit(property) {
   const btn = document.getElementById("visit-btn");
   const dateEl = document.getElementById("visit-date");
@@ -163,7 +157,6 @@ function wireVisit(property) {
   });
 }
 
-// Favorite toggle on the detail page.
 async function wireFavorite(property) {
   const btn = document.getElementById("fav-btn");
   const setBtn = (fav) => {
@@ -188,14 +181,11 @@ async function wireFavorite(property) {
     try {
       fav = await toggleFavorite(property.id, fav);
       setBtn(fav);
-    } catch {
-      /* keep previous state */
-    }
+    } catch {}
     btn.disabled = false;
   });
 }
 
-// Thumbnail click swaps the main image.
 function wireGallery() {
   const main = document.getElementById("gallery-main");
   document.querySelectorAll(".thumb").forEach((btn) => {
@@ -209,7 +199,7 @@ function wireGallery() {
   });
 }
 
-// AI insight: compare the listing price with our model's estimate.
+// AI insight: compare the listing price with the model's estimate.
 async function loadAiInsight(property) {
   const box = document.getElementById("ai-content");
   try {
@@ -227,12 +217,10 @@ async function loadAiInsight(property) {
     box.textContent = "Analyse IA indisponible pour le moment.";
   }
 
-  // Sale-delay prediction (independent of the price estimate above).
   await loadDelayPrediction(property, box);
 }
 
-// Predict how long this property is likely to take to sell, and append it to
-// the AI insight box. Failures are silent so they never hide the price line.
+// Append a sale-delay prediction to the AI box (silent on failure).
 async function loadDelayPrediction(property, box) {
   try {
     const delay = await ai.predictDelay({
@@ -247,12 +235,9 @@ async function loadDelayPrediction(property, box) {
       `<br />Délai de vente estimé : <strong>~${delay.estimated_days} jours</strong>
        (modèle : ${model}, ${delay.sample_size} ventes analysées).`
     );
-  } catch (err) {
-    /* not enough historical sales yet — keep the price estimate only */
-  }
+  } catch (err) {}
 }
 
-// Contact an agent: start a conversation about this property.
 function wireContact(property) {
   const btn = document.getElementById("contact-btn");
   const msg = document.getElementById("contact-msg");
@@ -284,7 +269,6 @@ function wireContact(property) {
   });
 }
 
-// ----- Boot -----
 const id = new URLSearchParams(window.location.search).get("id");
 if (!id) {
   detail.innerHTML = `<p class="text-slate2">Bien introuvable.</p>`;

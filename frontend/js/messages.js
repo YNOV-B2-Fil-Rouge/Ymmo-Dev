@@ -1,6 +1,4 @@
 // Messaging page: list conversations, open one, read & send messages.
-// (Real-time updates via WebSocket are planned for later — for now we load on
-// open and append after sending.)
 import { api } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
 
@@ -34,12 +32,10 @@ function otherParty(conv) {
   return { name, role };
 }
 
-// The property a conversation is about (empty string if none).
 function propertyLabel(conv) {
   return conv.property ? conv.property.title : "";
 }
 
-// ----- Conversation list -----
 function renderList(conversations) {
   empty.classList.toggle("hidden", conversations.length > 0);
   list.innerHTML = conversations
@@ -60,7 +56,6 @@ function renderList(conversations) {
     .join("");
 }
 
-// ----- Messages -----
 function bubble(message) {
   const mine = message.sender_id === me.id;
   const side = mine ? "ml-auto border-gold" : "mr-auto border-hibiscus";
@@ -88,10 +83,7 @@ async function openConversation(conv) {
   sendForm.classList.remove("hidden");
   placeholder.classList.add("hidden");
 
-  // Delete this conversation (only a participant may; the API enforces it).
   document.getElementById("conv-delete").addEventListener("click", () => deleteConversation(conv));
-
-  // Re-render the list to move the highlight.
   renderList(conversations);
 
   messagesEl.innerHTML = `<p class="text-slate2 text-center mt-10">Chargement…</p>`;
@@ -106,7 +98,7 @@ async function openConversation(conv) {
   }
 }
 
-// ----- Delete a conversation -----
+// Only a participant may delete; the API enforces it.
 async function deleteConversation(conv) {
   if (!confirm("Supprimer cette conversation ?")) return;
   try {
@@ -127,7 +119,6 @@ async function deleteConversation(conv) {
   }
 }
 
-// ----- Unread badge -----
 async function refreshUnread() {
   const badge = document.getElementById("unread-badge");
   try {
@@ -138,12 +129,9 @@ async function refreshUnread() {
     } else {
       badge.classList.add("hidden");
     }
-  } catch {
-    /* ignore */
-  }
+  } catch {}
 }
 
-// ----- Send -----
 sendForm.addEventListener("submit", async (e) => {
   e.preventDefault();
   const body = input.value.trim();
@@ -160,7 +148,6 @@ sendForm.addEventListener("submit", async (e) => {
   }
 });
 
-// ----- Boot -----
 let conversations = [];
 
 list.addEventListener("click", (e) => {
@@ -176,7 +163,7 @@ async function loadConversations() {
     const { data } = await api.listConversations();
     conversations = data;
     renderList(conversations);
-    if (conversations.length) openConversation(conversations[0]); // open the first by default
+    if (conversations.length) openConversation(conversations[0]);
   } catch {
     list.innerHTML = `<li class="text-slate2">Impossible de charger les conversations.</li>`;
   }

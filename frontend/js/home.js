@@ -1,16 +1,13 @@
-// Home page: nav state, catalogue loading from the API, and search.
+// Home page: nav state, catalogue loading, and search.
 import { api } from "./api.js";
 import { currentUser, logout, isLoggedIn } from "./auth.js";
 import { favoriteIdSet, heartIcon, toggleFavorite } from "./favorites.js";
 
-// ---------- Footer year ----------
 document.getElementById("year").textContent = new Date().getFullYear();
 
-// ---------- Auth state in the nav ----------
 const account = document.getElementById("nav-account");
 const user = currentUser();
 if (user) {
-  // Roles allowed to publish a listing.
   const canPublish = ["AGENT", "DIRECTOR", "HQ", "SELLER"].includes(user.role);
   const isStaff = ["AGENT", "DIRECTOR", "HQ", "IT"].includes(user.role);
   const dashboardHref =
@@ -26,7 +23,6 @@ if (user) {
     </a>`;
 }
 
-// ---------- Catalogue ----------
 const grid = document.getElementById("catalogue");
 const empty = document.getElementById("empty");
 
@@ -94,7 +90,7 @@ async function loadCatalogue(params = {}) {
   }
 }
 
-// Favorite toggle via event delegation (the grid element persists across loads).
+// Favorite toggle via event delegation (the grid is re-rendered on each load).
 grid.addEventListener("click", async (e) => {
   const btn = e.target.closest(".fav-btn");
   if (!btn) return;
@@ -112,19 +108,15 @@ grid.addEventListener("click", async (e) => {
     btn.setAttribute("aria-label", now ? "Retirer des favoris" : "Ajouter aux favoris");
     btn.innerHTML = heartIcon(now);
   } catch {
-    /* keep previous state on error */
+    /* keep previous state */
   }
   btn.disabled = false;
 });
 
-// ---------- Search ----------
-// The API filters on an exact city for now; a fuzzy text search (city/postal/
-// region) is a small backend enhancement we can add later.
 const searchForm = document.getElementById("search-form");
 searchForm.addEventListener("submit", (e) => {
   e.preventDefault();
   const q = searchForm.q.value.trim();
-  // The home search bar leads to the dedicated search page.
   window.location.href = q ? `./recherche.html?city=${encodeURIComponent(q)}` : "./recherche.html";
 });
 

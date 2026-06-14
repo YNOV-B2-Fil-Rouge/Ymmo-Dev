@@ -1,7 +1,4 @@
-// Director / HQ dashboard.
-// A director only sees their own agency (scoping is enforced by the API);
-// HQ gets the national view. KPIs and the director's analysis are computed
-// from the (already scoped) properties, so no other agency's data leaks.
+// Director/HQ dashboard (director = own agency, HQ = national; scoping by the API).
 import { api, ai } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
 import { enhanceTabsAria } from "./a11y.js";
@@ -13,7 +10,6 @@ if (!isLoggedIn() || !ALLOWED.includes(me.role)) {
 }
 const isHQ = me.role === "HQ";
 
-// HQ sees a national view with agency-oriented labels.
 const AGENCIES = { 1: "Ymmo Siège (Aix)", 2: "Ymmo Paris", 3: "Ymmo Lyon", 4: "Ymmo Marseille" };
 if (isHQ) {
   document.querySelector('[data-tab="perf"]').textContent = "Performance globale";
@@ -25,13 +21,11 @@ if (isHQ) {
 const euro = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// ----- Charts (Chart.js, loaded via CDN) -----
 const PALETTE = { hibiscus: "#b63753", gold: "#d4af37", slate: "#7f8c8d", midnight: "#2c3e50", green: "#16a34a" };
 const _charts = {};
 const trunc = (s, n = 22) => (String(s).length > n ? String(s).slice(0, n - 1) + "…" : String(s));
 
-// makeChart renders a chart, replacing any previous one on the same canvas.
-// If Chart.js failed to load, it does nothing (the tables below still show).
+// Render a chart, replacing any previous one (no-op if Chart.js is unavailable).
 function makeChart(canvasId, config) {
   const Chart = window.Chart;
   const el = document.getElementById(canvasId);
@@ -41,7 +35,6 @@ function makeChart(canvasId, config) {
   _charts[canvasId] = new Chart(el, config);
 }
 
-// ----- Tabs -----
 const tabs = document.querySelectorAll(".dash-tab");
 const panels = {
   perf: document.getElementById("panel-perf"),
@@ -58,15 +51,13 @@ function showTab(name) {
     b.classList.toggle("text-hibiscus", !active);
     b.setAttribute("aria-selected", String(active));
   });
-  // Charts created while their panel was hidden render at 0px; resize them now
-  // that the panel is visible.
+  // Charts rendered while their panel was hidden start at 0px; resize on show.
   requestAnimationFrame(() => Object.values(_charts).forEach((c) => c.resize()));
 }
 enhanceTabsAria(tabs, panels);
 tabs.forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 showTab("biens");
 
-// ----- Shared helpers -----
 const STATUS = {
   DRAFT: ["Brouillon", "bg-slate2/20 text-slate2"], PENDING_REVIEW: ["À valider", "bg-amber-100 text-amber-800"],
   AVAILABLE: ["Disponible", "bg-green-100 text-green-700"], UNDER_OFFER: ["Sous offre", "bg-amber-100 text-amber-800"],
@@ -85,7 +76,6 @@ function kpiCard(label, value) {
   return `<div class="rounded-xl border border-hibiscus/30 bg-white p-4"><p class="text-3xl font-bold text-hibiscus">${value}</p><p class="text-sm text-slate2 mt-1">${label}</p></div>`;
 }
 
-// ----- Properties + KPIs + analysis (all from the scoped data) -----
 function propertyCard(p) {
   const [label, classes] = STATUS[p.status] || [p.status, "bg-slate2/20 text-slate2"];
   return `
@@ -112,7 +102,6 @@ function renderKpis(props) {
     kpiCard("Vendus", sold), kpiCard("Prix moyen", euro.format(avg)), kpiCard("Vues cumulées", views),
   ].join("");
 
-  // Status breakdown as a doughnut.
   const others = Math.max(props.length - available.length - sold, 0);
   makeChart("kpi-chart", {
     type: "doughnut",
@@ -124,9 +113,8 @@ function renderKpis(props) {
   });
 }
 
-// Director: analysis computed from the agency's own properties.
+// Director analysis, computed from the agency's own properties.
 function renderAgencyAnalysis(props) {
-  // Avg price per m² by category.
   const byCat = {};
   props.forEach((p) => {
     if (!p.area) return;
@@ -137,10 +125,8 @@ function renderAgencyAnalysis(props) {
     escapeHtml(cat), euro.format(Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)), arr.length,
   ]);
 
-  // Most viewed.
   const top = [...props].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 6);
 
-  // Numeric series for the charts.
   const catLabels = Object.keys(byCat);
   const catValues = catLabels.map((cat) => Math.round(byCat[cat].reduce((a, b) => a + b, 0) / byCat[cat].length));
 
@@ -268,7 +254,6 @@ async function loadProperties() {
   }
 }
 
-// ----- Collaborators -----
 const ROLE_LABELS = { AGENT: "Agent", DIRECTOR: "Directeur", HQ: "Siège", IT: "IT & Support" };
 async function loadCollaborators() {
   try {
@@ -282,6 +267,5 @@ async function loadCollaborators() {
   }
 }
 
-// ----- Boot -----
 loadProperties();
 loadCollaborators();

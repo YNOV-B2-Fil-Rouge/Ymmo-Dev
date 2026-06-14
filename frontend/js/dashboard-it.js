@@ -1,5 +1,4 @@
-// IT dashboard: user management, the access-rights matrix, monitoring and the
-// collaborator directory.
+// IT dashboard: users, access-rights matrix, monitoring, collaborator directory.
 import { api, ai } from "./api.js";
 import { CONFIG } from "./config.js";
 import { currentUser, isLoggedIn } from "./auth.js";
@@ -12,7 +11,6 @@ if (!isLoggedIn() || !["IT", "HQ"].includes(me.role)) {
 
 const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// ----- Tabs -----
 const tabs = document.querySelectorAll(".dash-tab");
 const panels = {
   users: document.getElementById("panel-users"),
@@ -32,7 +30,7 @@ function showTab(name) {
 }
 enhanceTabsAria(tabs, panels);
 tabs.forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
-showTab("matrix"); // default (matches the wireframe)
+showTab("matrix");
 
 function table(headers, rows) {
   return `<table class="w-full text-sm border border-hibiscus/20 rounded-lg overflow-hidden">
@@ -42,7 +40,6 @@ function table(headers, rows) {
 
 const ROLE_LABELS = { VISITOR: "Visiteur", BUYER: "Acheteur", SELLER: "Vendeur", AGENT: "Agent", DIRECTOR: "Directeur", HQ: "Siège", IT: "IT & Support" };
 
-// ----- Users -----
 async function loadUsers() {
   try {
     const { data } = await api.allUsers();
@@ -60,7 +57,6 @@ async function loadUsers() {
   }
 }
 
-// ----- Access matrix -----
 const DEPT_LABELS = { Management: "Direction", Sales: "Commercial", "Comm. & Mktg": "Comm. & Mktg", "Admin/HR": "Admin/RH", "IT & Support": "IT & Support" };
 function levelCell(level) {
   if (level === "READ_WRITE") return `<span class="text-green-700 font-semibold">✔ R/W</span>`;
@@ -88,7 +84,7 @@ async function loadMatrix() {
   }
 }
 
-// ----- Monitoring (client-side service pings) -----
+// Monitoring: client-side pings of each service.
 function statusCard(label, ok, detail = "") {
   const color = ok ? "text-green-700" : "text-hibiscus";
   const dot = ok ? "bg-green-500" : "bg-hibiscus";
@@ -99,24 +95,20 @@ function statusCard(label, ok, detail = "") {
 }
 async function loadMonitoring() {
   const grid = document.getElementById("monitoring-grid");
-  // API Go (also reports the DB status).
-  let apiOk = false, dbOk = false;
+  let apiOk = false, dbOk = false; // /health reports both API and DB
   try {
     const r = await fetch(`${CONFIG.API_BASE.replace("/api/v1", "")}/health`);
     const j = await r.json();
     apiOk = r.ok;
     dbOk = j.database === "up";
-  } catch { /* down */ }
-  // Python AI service.
-  // The AI service is internal-only (not exposed on localhost), so we probe it
-  // THROUGH the Go proxy: a successful KPI call means the AI is reachable.
+  } catch {}
+  // AI is internal-only, so probe it through the Go proxy (a KPI call).
   let aiOk = false;
   try {
     await ai.dashboardKpis();
     aiOk = true;
   } catch (e) {
-    // A 502 from the proxy means the AI is down; any other answer means it
-    // replied (so it's up). Only a network failure leaves aiOk false.
+    // 502 = AI down; any other status means it replied (so it's up).
     aiOk = Boolean(e && e.status && e.status !== 502);
   }
 
@@ -127,7 +119,6 @@ async function loadMonitoring() {
   ].join("");
 }
 
-// ----- Technical links: Swagger + /ping -----
 function wireTechLinks() {
   const apiRoot = CONFIG.API_BASE.replace("/api/v1", "");
   document.getElementById("swagger-link").href = `${apiRoot}/swagger/index.html`;
@@ -148,7 +139,6 @@ function wireTechLinks() {
   });
 }
 
-// ----- Collaborators -----
 async function loadCollaborators() {
   try {
     const { data } = await api.collaborators();
@@ -161,7 +151,6 @@ async function loadCollaborators() {
   }
 }
 
-// ----- Boot -----
 loadUsers();
 loadMatrix();
 loadMonitoring();

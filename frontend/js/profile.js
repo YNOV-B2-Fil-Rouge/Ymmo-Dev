@@ -3,20 +3,17 @@ import { api } from "./api.js";
 import { currentUser, logout, isLoggedIn } from "./auth.js";
 import { enhanceTabsAria } from "./a11y.js";
 
-// Must be logged in.
 if (!isLoggedIn()) {
   window.location.href = "./auth.html";
 }
 
 const user = currentUser() || {};
 
-// ---------- Identity (avatar + name) ----------
 const initials = ((user.first_name?.[0] || "") + (user.last_name?.[0] || "")).toUpperCase() || "?";
 document.getElementById("avatar").textContent = initials;
 document.getElementById("full-name").textContent =
   `${user.first_name || ""} ${(user.last_name || "").toUpperCase()}`.trim();
 
-// ---------- Settings panel ----------
 const roleLabels = {
   BUYER: "Acheteur", SELLER: "Vendeur", AGENT: "Agent",
   DIRECTOR: "Directeur d'agence", HQ: "Siège", IT: "IT & Support",
@@ -31,7 +28,6 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   window.location.href = "./index.html";
 });
 
-// ---------- Tabs ----------
 const tabs = document.querySelectorAll(".profile-tab");
 const panels = {
   biens: document.getElementById("panel-biens"),
@@ -56,7 +52,6 @@ enhanceTabsAria(tabs, panels);
 tabs.forEach((btn) => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
 showTab("favoris"); // default tab (matches the wireframe)
 
-// ---------- Favorites ----------
 function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (c) => (
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
@@ -100,7 +95,6 @@ async function loadFavorites() {
 
 loadFavorites();
 
-// ---------- My visits (request, then cancel here) ----------
 const dateFmt = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
 const VISIT_STATUS = {
   REQUESTED: ["Demandée", "bg-amber-100 text-amber-800"],
@@ -111,7 +105,6 @@ const VISIT_STATUS = {
 
 function visitItem(v) {
   const [label, cls] = VISIT_STATUS[v.status] || [v.status, "bg-slate2/20 text-slate2"];
-  // A client may cancel a visit that is still open.
   const cancellable = v.status === "REQUESTED" || v.status === "CONFIRMED";
   return `
     <li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex items-center justify-between gap-4">
@@ -152,7 +145,6 @@ async function loadVisits() {
   }
 }
 
-// ---------- My alerts (created from the search page) ----------
 const CATEGORY_LABELS = {
   1: "Maison", 2: "Appartement", 3: "Studio", 4: "Terrain", 5: "Bureau", 6: "Local commercial", 7: "Entrepôt",
 };
@@ -207,9 +199,9 @@ loadVisits();
 loadAlerts();
 renderSellerCta();
 
-// ---------- Become a seller (buyers only) ----------
+// Become a seller (buyers only).
 async function renderSellerCta() {
-  if (user.role !== "BUYER") return; // sellers/staff don't see this
+  if (user.role !== "BUYER") return;
   const box = document.getElementById("seller-cta");
   box.classList.remove("hidden");
 
@@ -217,11 +209,8 @@ async function renderSellerCta() {
   try {
     const res = await api.mySellerApplication();
     app = res.data; // may be null
-  } catch {
-    /* treat as no application */
-  }
+  } catch {}
 
-  // Pending or approved: just show the status.
   if (app && app.status === "PENDING") {
     box.innerHTML = `
       <p class="font-semibold text-amber-700">Demande pour devenir vendeur</p>
@@ -235,7 +224,6 @@ async function renderSellerCta() {
     return;
   }
 
-  // No application yet, or a previous one was rejected: show the form.
   const rejected = app && app.status === "REJECTED";
   box.innerHTML = `
     <p class="font-semibold">Devenir vendeur</p>
@@ -267,8 +255,7 @@ async function renderSellerCta() {
   });
 }
 
-// Refresh the account from the server (also validates the token: a 401 means
-// the session expired, so we send the user back to the login page).
+// Refresh the account from the server (a 401 means the session expired).
 api.me()
   .then((fresh) => {
     document.getElementById("set-email").textContent = fresh.email || user.email || "";

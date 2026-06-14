@@ -1,5 +1,4 @@
-// Authentication helpers built on top of the API client. Pages use these to
-// log in/out and read the current user without touching localStorage directly.
+// Auth helpers: login/logout and reading the current user from localStorage.
 import { api, setToken, clearToken } from "./api.js";
 
 const USER_KEY = "ymmo_user";

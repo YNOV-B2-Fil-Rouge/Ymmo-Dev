@@ -3,7 +3,6 @@ import { api, ai } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
 import { enhanceTabsAria } from "./a11y.js";
 
-// Staff only.
 const STAFF = ["AGENT", "DIRECTOR", "HQ"];
 const me = currentUser() || {};
 if (!isLoggedIn() || !STAFF.includes(me.role)) {
@@ -19,7 +18,6 @@ function escapeHtml(value) {
   ));
 }
 
-// ----- Tabs -----
 const tabs = document.querySelectorAll(".dash-tab");
 const panels = {
   overview: document.getElementById("panel-overview"),
@@ -41,9 +39,8 @@ function showTab(name) {
 }
 enhanceTabsAria(tabs, panels);
 tabs.forEach((btn) => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
-showTab("biens"); // default (matches the wireframe)
+showTab("biens");
 
-// ----- My properties -----
 const STATUS = {
   DRAFT: ["Brouillon", "bg-slate2/20 text-slate2"],
   PENDING_REVIEW: ["À valider", "bg-amber-100 text-amber-800"],
@@ -62,7 +59,6 @@ function primaryPhoto(p) {
 function propertyCard(p) {
   const [label, classes] = STATUS[p.status] || [p.status, "bg-slate2/20 text-slate2"];
   const area = p.area != null ? ` - ${p.area} m²` : "";
-  // On the dashboard, a card leads to the edit form (management view).
   return `
     <a href="./property-form.html?id=${p.id}" class="group block rounded-xl border border-hibiscus/40 bg-white overflow-hidden hover:shadow-lg transition-all">
       <div class="relative overflow-hidden">
@@ -89,7 +85,6 @@ async function loadProperties() {
   }
 }
 
-// ----- KPIs -----
 function kpiCard(label, value) {
   return `
     <div class="rounded-xl border border-hibiscus/30 bg-white p-4">
@@ -113,9 +108,7 @@ async function loadKpis() {
   }
 }
 
-// ----- Planning: visits -----
-// As the agent, the workflow is: confirm a requested visit, mark it completed,
-// or cancel. (REQUESTED is not a valid manual transition — see visit_service.)
+// Agent visit actions; REQUESTED is not a valid manual transition.
 function visitActions(v) {
   const actions = [];
   if (v.status === "REQUESTED") actions.push(["CONFIRMED", "Confirmer"]);
@@ -135,7 +128,6 @@ function visitItem(v) {
     </li>`;
 }
 
-// ----- Planning: meetings -----
 function meetingItem(m) {
   return `<li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex items-center justify-between gap-4">
       <span>${escapeHtml(m.title)} <span class="text-slate2 text-sm">· ${dateFmt.format(new Date(m.start_at))}</span></span>
@@ -182,7 +174,6 @@ async function loadPlanning() {
   }
 }
 
-// Meeting creation form (toggle + submit).
 const meetingForm = document.getElementById("meeting-form");
 document.getElementById("meeting-toggle").addEventListener("click", () => meetingForm.classList.toggle("hidden"));
 meetingForm.addEventListener("submit", async (e) => {
@@ -209,7 +200,6 @@ meetingForm.addEventListener("submit", async (e) => {
   }
 });
 
-// ----- Sale files -----
 const SALE_STATUS = {
   OFFER: ["Offre", "bg-amber-100 text-amber-800"],
   PRELIMINARY_CONTRACT: ["Compromis", "bg-amber-100 text-amber-800"],
@@ -281,7 +271,6 @@ async function loadSales() {
       })
     );
 
-    // Detail (GET /sales/:id) — fetch the full file on demand.
     list.querySelectorAll(".sale-detail").forEach((btn) =>
       btn.addEventListener("click", async () => {
         const id = btn.dataset.saleDetail;
@@ -335,7 +324,6 @@ saleForm.addEventListener("submit", async (e) => {
   }
 });
 
-// ----- Seller submissions to validate -----
 function pendingCard(p) {
   const area = p.area != null ? ` - ${p.area} m²` : "";
   return `
@@ -377,7 +365,6 @@ async function loadPending() {
   }
 }
 
-// ----- Become-seller applications -----
 function sellerAppItem(a) {
   const u = a.user || {};
   const name = `${escapeHtml(u.first_name || "")} ${escapeHtml(u.last_name || "")}`.trim() || `Utilisateur #${a.user_id}`;
@@ -418,7 +405,6 @@ async function loadSellerApps() {
   }
 }
 
-// ----- Boot -----
 loadProperties();
 loadKpis();
 loadPlanning();

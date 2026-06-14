@@ -1,14 +1,7 @@
 // Shared accessibility helpers.
 
-// enhanceTabsAria upgrades a set of toggle buttons + their panels into an
-// accessible WAI-ARIA tab interface:
-//   - the buttons are wrapped in a role="tablist" container,
-//   - each button becomes role="tab" with an id + aria-controls,
-//   - each panel becomes role="tabpanel" with aria-labelledby.
-// The caller's showTab() keeps toggling aria-selected on the active tab.
-//
-// `tabs` is a NodeList/array of buttons carrying data-tab="<name>".
-// `panels` is an object mapping <name> -> the panel element (id="panel-<name>").
+// Turn toggle buttons + panels into a WAI-ARIA tab interface (tablist/tab/tabpanel).
+// `tabs`: buttons with data-tab="<name>"; `panels`: { name -> #panel-<name> element }.
 export function enhanceTabsAria(tabs, panels) {
   const first = tabs[0];
   if (first && first.parentElement) {

@@ -2,7 +2,6 @@
 import { api } from "./api.js";
 import { login } from "./auth.js";
 
-// ---------- Tab toggle (Connexion / Inscription) ----------
 const tabLogin = document.getElementById("tab-login");
 const tabRegister = document.getElementById("tab-register");
 const loginForm = document.getElementById("login-form");
@@ -30,10 +29,8 @@ function showTab(tab) {
 tabLogin.addEventListener("click", () => showTab("login"));
 tabRegister.addEventListener("click", () => showTab("register"));
 
-// Open the register tab directly via #register in the URL.
 if (window.location.hash === "#register") showTab("register");
 
-// ---------- Password visibility toggles ----------
 document.querySelectorAll(".toggle-password").forEach((btn) => {
   btn.addEventListener("click", () => {
     const input = document.getElementById(btn.dataset.target);
@@ -43,7 +40,6 @@ document.querySelectorAll(".toggle-password").forEach((btn) => {
   });
 });
 
-// ---------- Helpers ----------
 function showError(el, message) {
   el.textContent = message;
   el.classList.remove("hidden");
@@ -57,7 +53,6 @@ function busy(form, on, label) {
   btn.textContent = on ? "Veuillez patienter…" : label;
 }
 
-// ---------- Login ----------
 const loginError = loginForm.querySelector(".login-error");
 
 loginForm.addEventListener("submit", async (e) => {
@@ -78,7 +73,6 @@ loginForm.addEventListener("submit", async (e) => {
   }
 });
 
-// ---------- Register ----------
 const registerError = registerForm.querySelector(".register-error");
 
 registerForm.addEventListener("submit", async (e) => {
