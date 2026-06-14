@@ -118,6 +118,7 @@ export const api = {
 // it on the internal Docker network.
 export const ai = {
   estimate: (payload) => request("/ai/estimate", { method: "POST", body: payload }),
+  predictDelay: (payload) => request("/ai/predict-delay", { method: "POST", body: payload }),
   dashboardKpis: () => request("/ai/dashboard/kpis", { auth: true }),
   trends: (city) => request(`/ai/trends${city ? `?city=${encodeURIComponent(city)}` : ""}`, { auth: true }),
   zones: () => request("/ai/zones", { auth: true }),

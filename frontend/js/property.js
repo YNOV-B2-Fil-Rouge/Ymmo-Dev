@@ -226,6 +226,30 @@ async function loadAiInsight(property) {
   } catch (err) {
     box.textContent = "Analyse IA indisponible pour le moment.";
   }
+
+  // Sale-delay prediction (independent of the price estimate above).
+  await loadDelayPrediction(property, box);
+}
+
+// Predict how long this property is likely to take to sell, and append it to
+// the AI insight box. Failures are silent so they never hide the price line.
+async function loadDelayPrediction(property, box) {
+  try {
+    const delay = await ai.predictDelay({
+      city: property.city,
+      category_id: property.category_id,
+      area: Number(property.area),
+      price: Number(property.price),
+    });
+    const model = delay.method === "linear_regression" ? "régression" : "moyenne historique";
+    box.insertAdjacentHTML(
+      "beforeend",
+      `<br />Délai de vente estimé : <strong>~${delay.estimated_days} jours</strong>
+       (modèle : ${model}, ${delay.sample_size} ventes analysées).`
+    );
+  } catch (err) {
+    /* not enough historical sales yet — keep the price estimate only */
+  }
 }
 
 // Contact an agent: start a conversation about this property.

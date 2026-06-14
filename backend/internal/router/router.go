@@ -200,8 +200,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		aiProxy := handlers.NewAIProxy(cfg.AIBaseURL)
 		aiGroup := api.Group("/ai")
 		{
-			// Price estimate is shown on the public property page.
+			// Price estimate and sale-delay prediction are shown on the
+			// public property page.
 			aiGroup.POST("/estimate", aiProxy)
+			aiGroup.POST("/predict-delay", aiProxy)
 			// Dashboards/analytics are staff-only.
 			staffAI := aiGroup.Group("")
 			staffAI.Use(middleware.Auth(cfg.JWTSecret), middleware.RequireRole("AGENT", "DIRECTOR", "HQ", "IT"))
