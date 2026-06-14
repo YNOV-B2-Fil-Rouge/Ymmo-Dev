@@ -77,6 +77,14 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	messageService := services.NewMessageService(conversationRepo, userRepo)
 	messageHandler := handlers.NewMessageHandler(messageService)
 
+	visitRepo := repositories.NewVisitRepository(db)
+	visitService := services.NewVisitService(visitRepo, propertyRepo)
+	visitHandler := handlers.NewVisitHandler(visitService)
+
+	meetingRepo := repositories.NewMeetingRepository(db)
+	meetingService := services.NewMeetingService(meetingRepo)
+	meetingHandler := handlers.NewMeetingHandler(meetingService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
@@ -101,6 +109,9 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			// Favorites: any authenticated user (e.g. a buyer).
 			properties.POST("/:id/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.Add)
 			properties.DELETE("/:id/favorites", middleware.Auth(cfg.JWTSecret), favoriteHandler.Remove)
+
+			// Request a visit of this property.
+			properties.POST("/:id/visits", middleware.Auth(cfg.JWTSecret), visitHandler.Request)
 
 			// Management: staff only (valid token + internal role).
 			staff := properties.Group("")
@@ -132,6 +143,29 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			messaging.POST("/conversations/:id/messages", messageHandler.SendMessage)
 			messaging.GET("/conversations/:id/messages", messageHandler.GetMessages)
 			messaging.GET("/messages/unread-count", messageHandler.UnreadCount)
+		}
+
+		// Visits: any authenticated participant manages their own.
+		visits := api.Group("")
+		visits.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			visits.GET("/visits", visitHandler.List)
+			visits.PATCH("/visits/:id", visitHandler.UpdateStatus)
+		}
+
+		// Meetings: internal. Listing/deleting is for the user's own meetings;
+		// creating is staff only.
+		meetings := api.Group("/meetings")
+		meetings.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			meetings.GET("", meetingHandler.List)
+			meetings.DELETE("/:id", meetingHandler.Delete)
+
+			staffMeetings := meetings.Group("")
+			staffMeetings.Use(middleware.RequireRole("AGENT", "DIRECTOR", "HQ"))
+			{
+				staffMeetings.POST("", meetingHandler.Create)
+			}
 		}
 	}
 
