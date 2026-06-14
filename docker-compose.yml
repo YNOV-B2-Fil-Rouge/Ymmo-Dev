@@ -16,8 +16,8 @@ services:
       # Passed through so the init script can create the read-only AI user.
       AI_DB_USER: ${AI_DB_USER}
       AI_DB_PASSWORD: ${AI_DB_PASSWORD}
-    ports:
-      - "3306:3306"
+    expose:
+      - "3306"
     volumes:
       - db_data:/var/lib/mysql
       # Run on first startup (empty data volume), in alphabetical order.
