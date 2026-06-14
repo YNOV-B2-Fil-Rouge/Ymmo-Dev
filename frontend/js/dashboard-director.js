@@ -4,6 +4,7 @@
 // from the (already scoped) properties, so no other agency's data leaks.
 import { api, ai } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
+import { enhanceTabsAria } from "./a11y.js";
 
 const ALLOWED = ["DIRECTOR", "HQ"];
 const me = currentUser() || {};
@@ -55,18 +56,20 @@ function showTab(name) {
     b.classList.toggle("bg-hibiscus", active);
     b.classList.toggle("text-white", active);
     b.classList.toggle("text-hibiscus", !active);
+    b.setAttribute("aria-selected", String(active));
   });
   // Charts created while their panel was hidden render at 0px; resize them now
   // that the panel is visible.
   requestAnimationFrame(() => Object.values(_charts).forEach((c) => c.resize()));
 }
+enhanceTabsAria(tabs, panels);
 tabs.forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 showTab("biens");
 
 // ----- Shared helpers -----
 const STATUS = {
-  DRAFT: ["Brouillon", "bg-slate2/20 text-slate2"], PENDING_REVIEW: ["À valider", "bg-gold/20 text-gold"],
-  AVAILABLE: ["Disponible", "bg-green-100 text-green-700"], UNDER_OFFER: ["Sous offre", "bg-gold/20 text-gold"],
+  DRAFT: ["Brouillon", "bg-slate2/20 text-slate2"], PENDING_REVIEW: ["À valider", "bg-amber-100 text-amber-800"],
+  AVAILABLE: ["Disponible", "bg-green-100 text-green-700"], UNDER_OFFER: ["Sous offre", "bg-amber-100 text-amber-800"],
   SOLD: ["Vendu", "bg-hibiscus/15 text-hibiscus"], WITHDRAWN: ["Retiré", "bg-slate2/20 text-slate2"],
 };
 function primaryPhoto(p) {
@@ -75,7 +78,7 @@ function primaryPhoto(p) {
 }
 function table(headers, rows) {
   return `<table class="w-full text-sm border border-hibiscus/20 rounded-lg overflow-hidden">
-    <thead class="bg-hibiscus/10 text-left"><tr>${headers.map((h) => `<th class="px-3 py-2 font-semibold">${h}</th>`).join("")}</tr></thead>
+    <thead class="bg-hibiscus/10 text-left"><tr>${headers.map((h) => `<th scope="col" class="px-3 py-2 font-semibold">${h}</th>`).join("")}</tr></thead>
     <tbody>${rows.map((r) => `<tr class="border-t border-hibiscus/10">${r.map((c) => `<td class="px-3 py-2">${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
 function kpiCard(label, value) {
@@ -145,11 +148,11 @@ function renderAgencyAnalysis(props) {
     <div class="grid md:grid-cols-2 gap-6">
       <div class="border border-hibiscus/20 rounded-xl bg-white p-4">
         <h3 class="font-semibold text-hibiscus mb-3">Prix moyen au m² par catégorie</h3>
-        <div class="h-64"><canvas id="chart-cat"></canvas></div>
+        <div class="h-64"><canvas aria-hidden="true" id="chart-cat"></canvas></div>
       </div>
       <div class="border border-hibiscus/20 rounded-xl bg-white p-4">
         <h3 class="font-semibold text-hibiscus mb-3">Vos biens les plus consultés</h3>
-        <div class="h-64"><canvas id="chart-views"></canvas></div>
+        <div class="h-64"><canvas aria-hidden="true" id="chart-views"></canvas></div>
       </div>
     </div>
     <div>
@@ -176,16 +179,16 @@ async function renderNationalAnalysis() {
     <div class="grid md:grid-cols-2 gap-6">
       <div class="border border-hibiscus/20 rounded-xl bg-white p-4">
         <h3 class="font-semibold text-hibiscus mb-3">Zones à fort potentiel (score)</h3>
-        <div class="h-72"><canvas id="chart-zones"></canvas></div>
+        <div class="h-72"><canvas aria-hidden="true" id="chart-zones"></canvas></div>
       </div>
       <div class="border border-hibiscus/20 rounded-xl bg-white p-4">
         <h3 class="font-semibold text-hibiscus mb-3">Prix moyen au m² par ville</h3>
-        <div class="h-72"><canvas id="chart-trends"></canvas></div>
+        <div class="h-72"><canvas aria-hidden="true" id="chart-trends"></canvas></div>
       </div>
     </div>
     <div class="border border-hibiscus/20 rounded-xl bg-white p-4">
       <h3 class="font-semibold text-hibiscus mb-3">Biens les plus consultés (vues)</h3>
-      <div class="h-72"><canvas id="chart-popular"></canvas></div>
+      <div class="h-72"><canvas aria-hidden="true" id="chart-popular"></canvas></div>
     </div>
     <div><h3 class="font-semibold text-hibiscus mb-3">Zones à fort potentiel (détail)</h3><div id="zones-table"></div></div>
     <div><h3 class="font-semibold text-hibiscus mb-3">Tendances de prix (détail)</h3><div id="trends-table"></div></div>`;

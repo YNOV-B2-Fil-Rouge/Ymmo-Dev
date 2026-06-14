@@ -3,6 +3,7 @@
 import { api, ai } from "./api.js";
 import { CONFIG } from "./config.js";
 import { currentUser, isLoggedIn } from "./auth.js";
+import { enhanceTabsAria } from "./a11y.js";
 
 const me = currentUser() || {};
 if (!isLoggedIn() || !["IT", "HQ"].includes(me.role)) {
@@ -26,14 +27,16 @@ function showTab(name) {
     b.classList.toggle("bg-hibiscus", active);
     b.classList.toggle("text-white", active);
     b.classList.toggle("text-hibiscus", !active);
+    b.setAttribute("aria-selected", String(active));
   });
 }
+enhanceTabsAria(tabs, panels);
 tabs.forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
 showTab("matrix"); // default (matches the wireframe)
 
 function table(headers, rows) {
   return `<table class="w-full text-sm border border-hibiscus/20 rounded-lg overflow-hidden">
-    <thead class="bg-hibiscus/10 text-left"><tr>${headers.map((h) => `<th class="px-3 py-2 font-semibold">${h}</th>`).join("")}</tr></thead>
+    <thead class="bg-hibiscus/10 text-left"><tr>${headers.map((h) => `<th scope="col" class="px-3 py-2 font-semibold">${h}</th>`).join("")}</tr></thead>
     <tbody>${rows.map((r) => `<tr class="border-t border-hibiscus/10">${r.map((c) => `<td class="px-3 py-2">${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
 }
 

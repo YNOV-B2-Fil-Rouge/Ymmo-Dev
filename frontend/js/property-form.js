@@ -166,7 +166,7 @@ function renderPhotos(photos) {
       (ph) => `
       <figure class="relative rounded-lg overflow-hidden border border-hibiscus/30 group">
         <img src="${ph.url}" alt="Photo du bien" class="w-full h-28 object-cover" />
-        ${ph.is_primary ? `<figcaption class="absolute top-1 left-1 text-xs bg-gold text-white px-2 py-0.5 rounded-full">Principale</figcaption>` : ""}
+        ${ph.is_primary ? `<figcaption class="absolute top-1 left-1 text-xs bg-gold text-midnight px-2 py-0.5 rounded-full">Principale</figcaption>` : ""}
         <button type="button" data-photo="${ph.id}"
           class="photo-del absolute top-1 right-1 w-7 h-7 rounded-full bg-white/90 text-hibiscus flex items-center justify-center shadow hover:bg-hibiscus hover:text-white transition-colors"
           aria-label="Supprimer la photo">×</button>

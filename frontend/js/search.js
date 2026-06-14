@@ -27,7 +27,7 @@ function primaryPhoto(p) {
   return ph ? ph.url : "https://placehold.co/600x400?text=Ymmo";
 }
 function card(p, isFav) {
-  const badge = p.is_exclusive ? `<span class="absolute top-2 right-2 inline-flex items-center gap-1 bg-gold text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow">★ Exclusivité</span>` : "";
+  const badge = p.is_exclusive ? `<span class="absolute top-2 right-2 inline-flex items-center gap-1 bg-gold text-midnight text-xs font-semibold px-2.5 py-1 rounded-full shadow">★ Exclusivité</span>` : "";
   return `
     <a href="./property.html?id=${p.id}" class="group block rounded-xl border border-hibiscus/40 bg-white overflow-hidden transition-all duration-200 hover:shadow-xl hover:border-hibiscus hover:scale-[1.02]">
       <div class="relative overflow-hidden">
@@ -58,6 +58,9 @@ async function runSearch() {
     const [favSet, res] = await Promise.all([favoriteIdSet(), api.listProperties(qs ? `?${qs}` : "")]);
     grid.innerHTML = res.data.map((p) => card(p, favSet.has(p.id))).join("");
     empty.classList.toggle("hidden", res.data.length > 0);
+    // Announce the result count to assistive technologies.
+    const count = document.getElementById("results-count");
+    if (count) count.textContent = `${res.data.length} bien${res.data.length > 1 ? "s" : ""} trouvé${res.data.length > 1 ? "s" : ""}.`;
   } catch {
     grid.innerHTML = `<p class="col-span-full text-center text-slate2 py-10">Impossible de charger les biens.</p>`;
   }

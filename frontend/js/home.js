@@ -46,7 +46,7 @@ function card(property, isFav = false) {
   const title = escapeHtml(property.title);
   const area = property.area != null ? `${property.area} m²` : "";
   const badge = property.is_exclusive
-    ? `<span class="absolute top-2 right-2 inline-flex items-center gap-1 bg-gold text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow">★ Exclusivité</span>`
+    ? `<span class="absolute top-2 right-2 inline-flex items-center gap-1 bg-gold text-midnight text-xs font-semibold px-2.5 py-1 rounded-full shadow">★ Exclusivité</span>`
     : "";
 
   return `

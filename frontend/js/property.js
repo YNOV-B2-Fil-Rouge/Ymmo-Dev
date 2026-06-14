@@ -47,7 +47,7 @@ const detail = document.getElementById("detail");
 function render(property) {
   const images = photoUrls(property);
   const exclusivity = property.is_exclusive
-    ? `<p class="text-gold font-semibold tracking-wide">Exclusivité YMMO</p>`
+    ? `<p class="text-amber-700 font-semibold tracking-wide">Exclusivité YMMO</p>`
     : "";
 
   const thumbs = images

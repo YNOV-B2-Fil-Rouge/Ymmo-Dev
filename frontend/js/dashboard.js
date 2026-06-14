@@ -1,6 +1,7 @@
 // Agent dashboard: my properties, KPIs (AI), and planning (visits + meetings).
 import { api, ai } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
+import { enhanceTabsAria } from "./a11y.js";
 
 // Staff only.
 const STAFF = ["AGENT", "DIRECTOR", "HQ"];
@@ -35,17 +36,19 @@ function showTab(name) {
     btn.classList.toggle("bg-hibiscus", active);
     btn.classList.toggle("text-white", active);
     btn.classList.toggle("text-hibiscus", !active);
+    btn.setAttribute("aria-selected", String(active));
   });
 }
+enhanceTabsAria(tabs, panels);
 tabs.forEach((btn) => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
 showTab("biens"); // default (matches the wireframe)
 
 // ----- My properties -----
 const STATUS = {
   DRAFT: ["Brouillon", "bg-slate2/20 text-slate2"],
-  PENDING_REVIEW: ["À valider", "bg-gold/20 text-gold"],
+  PENDING_REVIEW: ["À valider", "bg-amber-100 text-amber-800"],
   AVAILABLE: ["Disponible", "bg-green-100 text-green-700"],
-  UNDER_OFFER: ["Sous offre", "bg-gold/20 text-gold"],
+  UNDER_OFFER: ["Sous offre", "bg-amber-100 text-amber-800"],
   SOLD: ["Vendu", "bg-hibiscus/15 text-hibiscus"],
   WITHDRAWN: ["Retiré", "bg-slate2/20 text-slate2"],
 };
@@ -208,8 +211,8 @@ meetingForm.addEventListener("submit", async (e) => {
 
 // ----- Sale files -----
 const SALE_STATUS = {
-  OFFER: ["Offre", "bg-gold/20 text-gold"],
-  PRELIMINARY_CONTRACT: ["Compromis", "bg-gold/20 text-gold"],
+  OFFER: ["Offre", "bg-amber-100 text-amber-800"],
+  PRELIMINARY_CONTRACT: ["Compromis", "bg-amber-100 text-amber-800"],
   DEED: ["Acte", "bg-green-100 text-green-700"],
   COMPLETED: ["Finalisée", "bg-hibiscus/15 text-hibiscus"],
   CANCELLED: ["Annulée", "bg-slate2/20 text-slate2"],

@@ -1,6 +1,7 @@
 // Profile page: sidebar tabs + the user's favorites and account settings.
 import { api } from "./api.js";
 import { currentUser, logout, isLoggedIn } from "./auth.js";
+import { enhanceTabsAria } from "./a11y.js";
 
 // Must be logged in.
 if (!isLoggedIn()) {
@@ -47,9 +48,11 @@ function showTab(name) {
     btn.classList.toggle("bg-hibiscus", active);
     btn.classList.toggle("text-white", active);
     btn.classList.toggle("text-hibiscus", !active);
+    btn.setAttribute("aria-selected", String(active));
   });
 }
 
+enhanceTabsAria(tabs, panels);
 tabs.forEach((btn) => btn.addEventListener("click", () => showTab(btn.dataset.tab)));
 showTab("favoris"); // default tab (matches the wireframe)
 
@@ -100,7 +103,7 @@ loadFavorites();
 // ---------- My visits (request, then cancel here) ----------
 const dateFmt = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
 const VISIT_STATUS = {
-  REQUESTED: ["Demandée", "bg-gold/20 text-gold"],
+  REQUESTED: ["Demandée", "bg-amber-100 text-amber-800"],
   CONFIRMED: ["Confirmée", "bg-green-100 text-green-700"],
   CANCELLED: ["Annulée", "bg-slate2/20 text-slate2"],
   COMPLETED: ["Terminée", "bg-hibiscus/15 text-hibiscus"],
@@ -221,7 +224,7 @@ async function renderSellerCta() {
   // Pending or approved: just show the status.
   if (app && app.status === "PENDING") {
     box.innerHTML = `
-      <p class="font-semibold text-gold">Demande pour devenir vendeur</p>
+      <p class="font-semibold text-amber-700">Demande pour devenir vendeur</p>
       <p class="text-sm text-slate2 mt-1">Votre demande est en cours d'examen par un agent.</p>`;
     return;
   }
