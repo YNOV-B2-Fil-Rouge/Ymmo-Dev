@@ -16,8 +16,6 @@ import (
 	"ymmo/internal/repositories"
 	"ymmo/internal/services"
 	"ymmo/internal/validation"
-
-	_ "ymmo/docs"
 )
 
 func New(cfg *config.Config, db *gorm.DB) *gin.Engine {

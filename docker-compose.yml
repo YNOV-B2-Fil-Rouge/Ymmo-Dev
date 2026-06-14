@@ -25,6 +25,8 @@ services:
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./db/init-ai-user.sh:/docker-entrypoint-initdb.d/02-ai-user.sh:ro
       - ./db/seed.sql:/docker-entrypoint-initdb.d/03-seed.sql:ro
+    networks:
+      - api_db
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
@@ -58,6 +60,9 @@ services:
       PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
     volumes:
       - uploads:/app/uploads
+    networks:
+      - front_api
+      - api_db
     ports:
       - "8080:8080"
 
@@ -78,6 +83,8 @@ services:
       DB_USER: ${AI_DB_USER}
       DB_PASSWORD: ${AI_DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+    networks:
+      - api_db
     # No public port: the AI service is reachable ONLY on the internal Docker
     # network (e.g. by the Go API at http://ai:8000). It is never exposed on
     # localhost:8000.
@@ -93,9 +100,11 @@ services:
     restart: unless-stopped
     depends_on:
       - api # not a hard dependency (the browser calls the API), just ordering
+    networks:
+      - front_api
     ports:
       # Browse the app at http://localhost:3000
-      - "3000:80"
+      - "3001:80"
 
 volumes:
   db_data:
@@ -105,3 +114,9 @@ volumes:
   uploads:
     # Stores uploaded property photos, persisted across container rebuilds.
     name: ymmo_uploads
+
+networks:
+  front_api:
+    name: ymmo_front_api
+  api_db:
+    name: ymmo_api_db
