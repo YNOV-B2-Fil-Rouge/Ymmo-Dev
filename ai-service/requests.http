@@ -1,0 +1,43 @@
+### Ymmo Data/AI service — manual tests (VS Code REST Client)
+### The service runs on port 8000. Make sure the DB is up and seeded.
+
+@base = http://localhost:8000
+
+### Health (expect database "up")
+GET {{base}}/health
+
+### Price trends — all cities (avg price per m² by city & category)
+GET {{base}}/trends
+
+### Price trends — filtered on one city
+GET {{base}}/trends?city=Paris
+
+### Popular properties (by view count)
+GET {{base}}/popular
+
+### Popular — top 5
+GET {{base}}/popular?limit=5
+
+### Strategic zones (opportunity score per city)
+GET {{base}}/zones
+
+### Head-office dashboard KPIs
+GET {{base}}/dashboard/kpis
+
+### Price estimate — apartment, Paris, 70 m²
+POST {{base}}/estimate
+Content-Type: application/json
+
+{ "city": "Paris", "category_id": 2, "area": 70 }
+
+### Price estimate — house, Aix-en-Provence, 120 m²
+POST {{base}}/estimate
+Content-Type: application/json
+
+{ "city": "Aix-en-Provence", "category_id": 1, "area": 120 }
+
+### Price estimate — city with no data (falls back, or 404 if DB is empty)
+POST {{base}}/estimate
+Content-Type: application/json
+
+{ "city": "Bordeaux", "category_id": 2, "area": 80 }

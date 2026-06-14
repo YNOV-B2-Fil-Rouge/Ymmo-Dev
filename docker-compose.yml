@@ -13,12 +13,16 @@ services:
       MARIADB_DATABASE: ${DB_NAME}
       MARIADB_USER: ${DB_USER}
       MARIADB_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "3306:3306"
+      # Passed through so the init script can create the read-only AI user.
+      AI_DB_USER: ${AI_DB_USER}
+      AI_DB_PASSWORD: ${AI_DB_PASSWORD}
+    expose:
+      - "3306"
     volumes:
       - db_data:/var/lib/mysql
-      # schema.sql runs automatically on first startup (empty data volume).
+      # Run on first startup (empty data volume), in alphabetical order.
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/init-ai-user.sh:/docker-entrypoint-initdb.d/02-ai-user.sh:ro
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
@@ -37,16 +41,39 @@ services:
       db:
         condition: service_healthy # API starts only once the DB is ready
     environment:
-      APP_ENV: ${APP_ENV:-development}
+      APP_ENV: ${APP_ENV}
       APP_PORT: "8080"
-      JWT_SECRET: ${JWT_SECRET:-dev-secret-change-me}
+      JWT_SECRET: ${JWT_SECRET}
       DB_HOST: db # service name on the compose network
       DB_PORT: "3306"
-      DB_USER: ${DB_USER:-ymmo_user}
-      DB_PASSWORD: ${DB_PASSWORD:-ymmo_pass}
-      DB_NAME: ${DB_NAME:-ymmo}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
     ports:
       - "8080:8080"
+
+  # ---------- Python Data/AI service ----------
+  ai:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: ymmo-ai
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db # service name on the compose network
+      DB_PORT: "3306"
+      # Read-only AI user (no fallback).
+      DB_USER: ${AI_DB_USER}
+      DB_PASSWORD: ${AI_DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+    # No public port: the AI service is reachable ONLY on the internal Docker
+    # network (e.g. by the Go API at http://ai:8000). It is never exposed on
+    # localhost:8000.
+    expose:
+      - "8000"
 
 volumes:
   db_data:
