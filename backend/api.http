@@ -462,3 +462,44 @@ Authorization: Bearer {{loginDirector.response.body.token}}
 ### 66. Delete a non-existing meeting (expect 404)
 DELETE {{baseUrl}}/api/v1/meetings/999999
 Authorization: Bearer {{loginDirector.response.body.token}}
+
+### =====================================================================
+### ALERTS — saved searches (any authenticated user)
+### =====================================================================
+
+### 67. Create an alert WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/alerts
+Content-Type: application/json
+
+{ "city": "Paris", "max_price": 500000 }
+
+### 68. Buyer creates an alert (expect 201) — captures the alert id
+# @name createAlert
+POST {{baseUrl}}/api/v1/alerts
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "city": "Paris", "category_id": 2, "min_price": 200000, "max_price": 500000, "max_energy": "D" }
+
+### 69. Create an alert with an invalid energy class (expect 400)
+POST {{baseUrl}}/api/v1/alerts
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "city": "Lyon", "max_energy": "Z" }
+
+### 70. Buyer lists their alerts (expect the alert)
+GET {{baseUrl}}/api/v1/alerts
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 71. Agent (not the owner) tries to delete the buyer's alert (expect 403)
+DELETE {{baseUrl}}/api/v1/alerts/{{createAlert.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### 72. Buyer (owner) deletes their alert (expect 204)
+DELETE {{baseUrl}}/api/v1/alerts/{{createAlert.response.body.id}}
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 73. Delete a non-existing alert (expect 404)
+DELETE {{baseUrl}}/api/v1/alerts/999999
+Authorization: Bearer {{loginBuyer.response.body.token}}
