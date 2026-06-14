@@ -8,5 +8,6 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Static assets only (explicit copies so config files never reach the web root).
 COPY *.html /usr/share/nginx/html/
 COPY js /usr/share/nginx/html/js
+COPY img /usr/share/nginx/html/img
 
 EXPOSE 80
