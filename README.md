@@ -202,12 +202,13 @@ docker compose logs -f api
 ```
 
 ## 🌐 Authors
-- **LEFEBVRE Nino** — DEV (Go API, front-end, Data/AI)
-- **AMIARD Renaud** — INFRA (network, servers, VMs)
-- **LASBENNES Lucas** — INFRA (network, servers, VMs)
+- [**LEFEBVRE Nino**](https://github.com/Ewoukouskous) — DEV (Go API, front-end, Data/AI)
+- [**AMIARD Renaud**](https://github.com/RAmiard) — INFRA (network, servers, VMs)
+- [**LASBENNES Lucas**](https://github.com/LucasAstley) — INFRA (network, servers, VMs)
 
 ## 🪢 Appendix
 - 📦 [Back-end (Go API) — `backend/README.md`](backend/README.md)
 - 🧠 [Data/AI service (Python) — `ai-service/README.md`](ai-service/README.md)
 - 🖥️ [Front-end — `frontend/README.md`](frontend/README.md)
-- 🗃️ Database schema diagram — `db/schema.mermaid`
+- 🗃️ [DrawSQL Schema Diagram](https://drawsql.app/teams/ynov-campus-toulouse/diagrams/test)
+- 🗃️ Database schema diagram (Mermaid) — `db/schema.mermaid`
