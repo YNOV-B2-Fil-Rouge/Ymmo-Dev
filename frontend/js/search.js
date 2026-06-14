@@ -113,6 +113,8 @@ document.querySelectorAll(".energy-btn").forEach((btn) => {
 // ----- Budget + city -----
 document.getElementById("min-price").addEventListener("input", (e) => { filters.min_price = e.target.value; debouncedSearch(); });
 document.getElementById("max-price").addEventListener("input", (e) => { filters.max_price = e.target.value; debouncedSearch(); });
+document.getElementById("min-area").addEventListener("input", (e) => { filters.min_area = e.target.value; debouncedSearch(); });
+document.getElementById("max-area").addEventListener("input", (e) => { filters.max_area = e.target.value; debouncedSearch(); });
 const cityInput = document.getElementById("city");
 cityInput.addEventListener("input", (e) => { filters.city = e.target.value.trim(); debouncedSearch(); });
 
@@ -153,6 +155,7 @@ alertBtn.addEventListener("click", async () => {
   if (filters.category_id) payload.category_id = Number(filters.category_id);
   if (filters.min_price) payload.min_price = Number(filters.min_price);
   if (filters.max_price) payload.max_price = Number(filters.max_price);
+  if (filters.min_area) payload.min_area = Number(filters.min_area);
   if (filters.max_energy) payload.max_energy = filters.max_energy;
 
   if (Object.keys(payload).length === 0) {

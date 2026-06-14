@@ -65,6 +65,22 @@
         </div>
 
         <div class="mb-6">
+          <p class="font-semibold mb-2">Surface :</p>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="text-xs text-slate2">Minimum
+              <span class="flex items-center gap-1 mt-1">
+                <input id="min-area" type="number" min="0" class="w-full rounded-md border border-hibiscus/60 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" /><span>m²</span>
+              </span>
+            </label>
+            <label class="text-xs text-slate2">Maximum
+              <span class="flex items-center gap-1 mt-1">
+                <input id="max-area" type="number" min="0" class="w-full rounded-md border border-hibiscus/60 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" /><span>m²</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mb-6">
           <label for="city" class="block font-semibold mb-2">Localisation :</label>
           <input id="city" type="search" placeholder="Paris, Lyon, Aix-en-Provence…"
             class="w-full rounded-md border border-hibiscus/60 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" />
