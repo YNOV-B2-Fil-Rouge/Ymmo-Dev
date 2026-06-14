@@ -120,4 +120,4 @@ searchForm.addEventListener("submit", (e) => {
   window.location.href = q ? `./recherche.html?city=${encodeURIComponent(q)}` : "./recherche.html";
 });
 
-loadCatalogue();
+loadCatalogue({ page_size: 50 });

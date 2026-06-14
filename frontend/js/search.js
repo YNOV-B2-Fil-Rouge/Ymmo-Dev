@@ -41,7 +41,7 @@ function card(p, isFav) {
     </a>`;
 }
 
-const filters = {};
+const filters = { page_size: 50 };
 const grid = document.getElementById("results-grid");
 const empty = document.getElementById("results-empty");
 
