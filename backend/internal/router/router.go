@@ -108,6 +108,7 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		}
 
 		properties := api.Group("/properties")
+		properties.Use(middleware.OptionalAuth(cfg.JWTSecret))
 		{
 			properties.GET("", propertyHandler.List)
 			properties.GET("/:id", propertyHandler.Get)
@@ -146,6 +147,7 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		meGroup.Use(middleware.Auth(cfg.JWTSecret))
 		{
 			meGroup.GET("/properties", middleware.RequireRole("AGENT", "DIRECTOR", "HQ"), propertyHandler.ListMine)
+			meGroup.DELETE("", userHandler.DeleteMe)
 		}
 
 		mgmt := api.Group("/management")
@@ -155,6 +157,7 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			mgmt.GET("/pending-properties", middleware.RequireRole("AGENT", "DIRECTOR", "HQ"), propertyHandler.ListPending)
 			mgmt.GET("/collaborators", middleware.RequireRole("DIRECTOR", "HQ", "IT"), userHandler.ListCollaborators)
 			mgmt.GET("/users", middleware.RequireRole("IT", "HQ"), userHandler.ListAll)
+			mgmt.DELETE("/users/:id", middleware.RequireRole("IT", "HQ"), userHandler.DeleteUser)
 			mgmt.GET("/permissions", middleware.RequireRole("IT", "HQ"), permissionHandler.GetMatrix)
 
 			staffReview := middleware.RequireRole("AGENT", "DIRECTOR", "HQ")

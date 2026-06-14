@@ -159,6 +159,11 @@ function wireVisit(property) {
 
 async function wireFavorite(property) {
   const btn = document.getElementById("fav-btn");
+  // Only publicly-listed properties can be favorited (matches the API).
+  if (property.status !== "AVAILABLE" && property.status !== "UNDER_OFFER") {
+    btn.classList.add("hidden");
+    return;
+  }
   const setBtn = (fav) => {
     btn.setAttribute("aria-pressed", String(fav));
     btn.querySelector(".fav-label").textContent = fav ? "Retirer des favoris" : "Ajouter aux favoris";

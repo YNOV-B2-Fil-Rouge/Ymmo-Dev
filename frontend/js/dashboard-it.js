@@ -41,19 +41,38 @@ function table(headers, rows) {
 const ROLE_LABELS = { VISITOR: "Visiteur", BUYER: "Acheteur", SELLER: "Vendeur", AGENT: "Agent", DIRECTOR: "Directeur", HQ: "Siège", IT: "IT & Support" };
 
 async function loadUsers() {
+  const host = document.getElementById("users-table");
   try {
     const { data } = await api.allUsers();
-    document.getElementById("users-table").innerHTML = table(
-      ["Nom", "Email", "Rôle", "Agence"],
+    host.innerHTML = table(
+      ["Nom", "Email", "Rôle", "Agence", ""],
       data.map((u) => [
         `${escapeHtml(u.last_name)} ${escapeHtml(u.first_name)}`,
         escapeHtml(u.email),
         ROLE_LABELS[u.role?.code] || u.role?.code || "",
         u.agency_id ?? "—",
+        u.is_active === false
+          ? `<span class="text-slate2">Supprimé</span>`
+          : u.id === me.id
+            ? `<span class="text-slate2">—</span>`
+            : `<button data-del="${u.id}" data-name="${escapeHtml(u.last_name)} ${escapeHtml(u.first_name)}" class="user-del text-xs font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-2.5 py-1 rounded-md transition-colors">Supprimer</button>`,
       ])
     );
+    host.querySelectorAll(".user-del").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        if (!confirm(`Supprimer le compte de ${btn.dataset.name} ? Les données seront anonymisées.`)) return;
+        btn.disabled = true;
+        try {
+          await api.deleteUser(btn.dataset.del);
+          loadUsers();
+        } catch {
+          alert("Suppression impossible.");
+          btn.disabled = false;
+        }
+      });
+    });
   } catch {
-    document.getElementById("users-table").innerHTML = `<p class="text-slate2">Impossible de charger les utilisateurs.</p>`;
+    host.innerHTML = `<p class="text-slate2">Impossible de charger les utilisateurs.</p>`;
   }
 }
 

@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	ErrPropertyNotFound = errors.New("property not found")
-	ErrNotPendingReview = errors.New("property is not awaiting review")
+	ErrPropertyNotFound  = errors.New("property not found")
+	ErrNotPendingReview  = errors.New("property is not awaiting review")
+	ErrPropertyNotPublic = errors.New("property is not publicly available")
 )
 
 type PropertyService struct {

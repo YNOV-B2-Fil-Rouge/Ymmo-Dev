@@ -11,6 +11,13 @@ const (
 	PropertyStatusWithdrawn     = "WITHDRAWN"
 )
 
+// IsPubliclyVisible reports whether a property is browsable by clients
+// (catalogue / detail page). Draft, pending-review, sold and withdrawn
+// listings are not, so they can't be favorited, contacted, etc.
+func IsPubliclyVisible(status string) bool {
+	return status == PropertyStatusAvailable || status == PropertyStatusUnderOffer
+}
+
 type Property struct {
 	ID          uint     `gorm:"primaryKey;column:id" json:"id"`
 	Reference   string   `gorm:"column:reference" json:"reference"`

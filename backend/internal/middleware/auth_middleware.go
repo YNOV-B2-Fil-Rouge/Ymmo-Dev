@@ -36,6 +36,20 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 	}
 }
 
+func OptionalAuth(jwtSecret string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		header := c.GetHeader("Authorization")
+		if header != "" && strings.HasPrefix(header, "Bearer ") {
+			tokenString := strings.TrimPrefix(header, "Bearer ")
+			if claims, err := security.ParseToken(jwtSecret, tokenString); err == nil {
+				c.Set(ctxUserID, claims.UserID)
+				c.Set(ctxRole, claims.Role)
+			}
+		}
+		c.Next()
+	}
+}
+
 func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		current := CurrentRole(c)

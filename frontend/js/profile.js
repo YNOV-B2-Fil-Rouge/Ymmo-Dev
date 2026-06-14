@@ -28,6 +28,22 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   window.location.href = "./index.html";
 });
 
+document.getElementById("delete-account-btn").addEventListener("click", async () => {
+  if (!confirm("Supprimer définitivement votre compte ? Cette action est irréversible.")) return;
+  const btn = document.getElementById("delete-account-btn");
+  const msg = document.getElementById("delete-account-msg");
+  btn.disabled = true;
+  try {
+    await api.deleteMe();
+    logout();
+    window.location.href = "./index.html";
+  } catch {
+    msg.textContent = "Suppression impossible pour le moment.";
+    msg.classList.remove("hidden");
+    btn.disabled = false;
+  }
+});
+
 const tabs = document.querySelectorAll(".profile-tab");
 const panels = {
   biens: document.getElementById("panel-biens"),

@@ -6,11 +6,11 @@ type CreatePropertyRequest struct {
 	CategoryID  uint8   `json:"category_id" binding:"required"`
 	Price       float64 `json:"price" binding:"required,gt=0"`
 	Area        float64 `json:"area" binding:"required,gt=0"`
-	Rooms       *uint8  `json:"rooms" binding:"omitempty"`
-	Bedrooms    *uint8  `json:"bedrooms" binding:"omitempty"`
-	Bathrooms   *uint8  `json:"bathrooms" binding:"omitempty"`
-	Floor       *int8   `json:"floor" binding:"omitempty"`
-	BuildYear   *uint16 `json:"build_year" binding:"omitempty"`
+	Rooms       *uint8  `json:"rooms" binding:"omitempty,gte=0,lte=100"`
+	Bedrooms    *uint8  `json:"bedrooms" binding:"omitempty,gte=0,lte=100"`
+	Bathrooms   *uint8  `json:"bathrooms" binding:"omitempty,gte=0,lte=100"`
+	Floor       *int8   `json:"floor" binding:"omitempty,gte=0,lte=120"`
+	BuildYear   *uint16 `json:"build_year" binding:"omitempty,gte=1700,lte=2100"`
 	EnergyRating string `json:"energy_rating" binding:"omitempty,oneof=A B C D E F G"`
 	GhgRating   string  `json:"ghg_rating" binding:"omitempty,oneof=A B C D E F G"`
 	Address     string  `json:"address" binding:"omitempty,max=255"`
@@ -29,11 +29,11 @@ type UpdatePropertyRequest struct {
 	Status      *string  `json:"status" binding:"omitempty,oneof=DRAFT PENDING_REVIEW AVAILABLE UNDER_OFFER SOLD WITHDRAWN"`
 	Price       *float64 `json:"price" binding:"omitempty,gt=0"`
 	Area        *float64 `json:"area" binding:"omitempty,gt=0"`
-	Rooms       *uint8   `json:"rooms" binding:"omitempty"`
-	Bedrooms    *uint8   `json:"bedrooms" binding:"omitempty"`
-	Bathrooms   *uint8   `json:"bathrooms" binding:"omitempty"`
-	Floor       *int8    `json:"floor" binding:"omitempty"`
-	BuildYear   *uint16  `json:"build_year" binding:"omitempty"`
+	Rooms       *uint8   `json:"rooms" binding:"omitempty,gte=0,lte=100"`
+	Bedrooms    *uint8   `json:"bedrooms" binding:"omitempty,gte=0,lte=100"`
+	Bathrooms   *uint8   `json:"bathrooms" binding:"omitempty,gte=0,lte=100"`
+	Floor       *int8    `json:"floor" binding:"omitempty,gte=0,lte=120"`
+	BuildYear   *uint16  `json:"build_year" binding:"omitempty,gte=1700,lte=2100"`
 	EnergyRating *string `json:"energy_rating" binding:"omitempty,oneof=A B C D E F G"`
 	GhgRating   *string  `json:"ghg_rating" binding:"omitempty,oneof=A B C D E F G"`
 	Address     *string  `json:"address" binding:"omitempty,max=255"`

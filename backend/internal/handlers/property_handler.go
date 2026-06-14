@@ -44,6 +44,11 @@ func (h *PropertyHandler) List(c *gin.Context) {
 		return
 	}
 
+	role := middleware.CurrentRole(c)
+	if role == "" || role == "BUYER" {
+		q.Status = "AVAILABLE"
+	}
+
 	items, pagination, err := h.svc.Search(q)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch properties"})
@@ -116,6 +121,15 @@ func (h *PropertyHandler) Get(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch property"})
 		return
 	}
+
+	if property.Status == "DRAFT" || property.Status == "PENDING_REVIEW" {
+		role := middleware.CurrentRole(c)
+		if role == "" || role == "BUYER" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
+			return
+		}
+	}
+
 	c.JSON(http.StatusOK, property)
 }
 

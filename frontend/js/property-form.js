@@ -204,10 +204,21 @@ form.addEventListener("submit", async (e) => {
     postal_code: $("postal_code").value.trim(),
     is_exclusive: $("is_exclusive").checked,
   };
+  // No negative values anywhere (price/area must be > 0, counts/floor/year >= 0).
+  if (payload.price <= 0 || payload.area <= 0) {
+    showError("Le prix et la surface doivent être strictement positifs.");
+    return;
+  }
   // Optional fields (only sent when filled).
   for (const k of ["rooms", "bedrooms", "bathrooms", "floor", "build_year"]) {
     const v = num(k);
-    if (v !== undefined) payload[k] = v;
+    if (v !== undefined) {
+      if (v < 0) {
+        showError("Les valeurs numériques ne peuvent pas être négatives.");
+        return;
+      }
+      payload[k] = v;
+    }
   }
   for (const k of ["description", "address"]) {
     const v = str(k);

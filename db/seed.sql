@@ -1,76 +1,240 @@
--- =====================================================================
---  YMMO — Demo seed data
---  Loaded automatically by docker compose on first startup
---  (mounted as /docker-entrypoint-initdb.d/03-seed.sql, after the schema).
---  Also runnable by hand:  mariadb -u root -p ymmo < seed.sql
---  Safe to re-run: it clears these tables first.
---
---  Test accounts (password in clear here ONLY because this is demo data):
---    agent@ymmo.fr    / agent1234     (role AGENT)
---    director@ymmo.fr / director1234  (role DIRECTOR)
---    buyer@ymmo.fr    / buyer1234     (role BUYER)
--- =====================================================================
-USE ymmo;
-SET NAMES utf8mb4;  -- preserve accented names (e.g. "Hélène")
+/*M!999999\- enable the sandbox mode */ 
 
--- Reset all demo data. FK checks are disabled so the reset is re-runnable even
--- after data has been created through the app (conversations, sales, etc.).
-SET FOREIGN_KEY_CHECKS = 0;
-DELETE FROM messages;
-DELETE FROM conversations;
-DELETE FROM visits;
-DELETE FROM meeting_participants;
-DELETE FROM meetings;
-DELETE FROM sale_files;
-DELETE FROM property_views;
-DELETE FROM favorites;
-DELETE FROM alerts;
-DELETE FROM property_photos;
-DELETE FROM properties;
-DELETE FROM users;            -- full reset (avoids id collisions with app sign-ups)
-DELETE FROM agencies;
-SET FOREIGN_KEY_CHECKS = 1;
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*M!100616 SET @OLD_NOTE_VERBOSITY=@@NOTE_VERBOSITY, NOTE_VERBOSITY=0 */;
 
--- ---------------------------------------------------------------------
--- Agencies (1 = HQ Aix-en-Provence, then a few regional agencies)
--- ---------------------------------------------------------------------
-INSERT INTO agencies (id, name, city, postal_code, is_hq) VALUES
-  (1, 'Ymmo Siège',  'Aix-en-Provence', '13100', TRUE),
-  (2, 'Ymmo Paris',  'Paris',           '75001', FALSE),
-  (3, 'Ymmo Lyon',   'Lyon',            '69002', FALSE),
-  (4, 'Ymmo Marseille','Marseille',     '13001', FALSE);
+USE `ymmo`;
 
--- ---------------------------------------------------------------------
--- Users (bcrypt hashes, cost 10 — verify in Go's bcrypt)
--- role_id:  2=BUYER, 4=AGENT, 5=DIRECTOR   department_id: 1=Management, 2=Sales
--- ---------------------------------------------------------------------
-INSERT INTO users (id, email, password_hash, last_name, first_name, role_id, department_id, agency_id, is_active) VALUES
-  (1, 'agent@ymmo.fr',    '$2b$10$TVzS9UGprQwiyuN6QlTUTudailOAbUZ.cyNfYaCnZ3XydYkQoK5Qa', 'Martin',  'Alice', 4, 2, 1, TRUE),
-  (2, 'director@ymmo.fr', '$2b$10$K0Mm7jiJTYRDjv5xXNmb3O.TCRROlns0P7UmpwOFWD0j7JO54ZSmC', 'Bernard', 'Marc',  5, 1, 1, TRUE),
-  (3, 'buyer@ymmo.fr',    '$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K', 'Petit',   'Sophie', 2, NULL, NULL, TRUE),
-  (4, 'hq@ymmo.fr',       '$2b$10$byR4yyTCwTVQvCPA/KP2TuoPC6Y1oCm87LjjAT5gkzF6YPtEeMFIe', 'Durand',  'Hélène', 6, 1, 1, TRUE),
-  (5, 'it@ymmo.fr',       '$2b$10$1A8gzlv.ewQPw0ud/CJz0.541JL2ASUEyvoeKBrY2UNxIQDuNoc2e', 'Rousseau','Karim',  7, 5, 1, TRUE),
-  (6, 'director.paris@ymmo.fr', '$2b$10$I1SvMoSDb37EDcrs/MnbcONTNTIkgyzaVlBvrDUJWLCX/6U/vp7Wa', 'Moreau', 'Julie', 5, 1, 2, TRUE);
+-- Reset demo tables so this seed is safe to re-run (FK checks already disabled above).
+-- Reference tables (roles, departments, property_categories, department_permissions)
+-- are populated by schema.sql and intentionally left untouched.
+DELETE FROM `messages`;
+DELETE FROM `conversations`;
+DELETE FROM `visits`;
+DELETE FROM `meeting_participants`;
+DELETE FROM `meetings`;
+DELETE FROM `sale_files`;
+DELETE FROM `property_views`;
+DELETE FROM `price_history`;
+DELETE FROM `favorites`;
+DELETE FROM `alerts`;
+DELETE FROM `seller_applications`;
+DELETE FROM `property_photos`;
+DELETE FROM `properties`;
+DELETE FROM `users`;
+DELETE FROM `agencies`;
 
--- ---------------------------------------------------------------------
--- Properties
--- category_id: 1=House 2=Apartment 3=Studio 5=Office
--- 4 are AVAILABLE (public), 1 is DRAFT (must stay hidden from the catalogue)
--- ---------------------------------------------------------------------
-INSERT INTO properties
-  (reference, title, description, category_id, status, price, area, rooms, bedrooms,
-   energy_rating, city, postal_code, is_exclusive, agency_id, agent_id, published_at)
-VALUES
-  ('SEED-0001', 'Appartement lumineux T3', 'Proche centre, balcon sud', 2, 'AVAILABLE', 480000, 75, 3, 2, 'C', 'Paris',           '75011', TRUE,  2, 1, NOW()),
-  ('SEED-0002', 'Maison familiale 5 pièces', 'Jardin 400m², garage',    1, 'AVAILABLE', 650000, 140, 5, 4, 'D', 'Aix-en-Provence', '13100', FALSE, 1, 1, NOW()),
-  ('SEED-0003', 'Studio étudiant',          'Idéal investissement',     3, 'AVAILABLE', 180000, 28,  1, 0, 'E', 'Lyon',            '69002', FALSE, 3, 1, NOW()),
-  ('SEED-0004', 'Bureau open-space',        'Quartier d''affaires',     5, 'AVAILABLE', 320000, 90,  4, 0, 'C', 'Marseille',       '13001', FALSE, 4, 1, NOW()),
-  ('SEED-0005', 'Appartement à valider',    'En attente de publication',2, 'DRAFT',     550000, 82,  3, 2, 'B', 'Paris',           '75008', TRUE,  2, 1, NULL),
-  ('SEED-0006', 'Appartement Haussmannien', 'Charme parisien, moulures', 2, 'AVAILABLE', 720000, 95,  4, 2, 'C', 'Paris',           '75009', FALSE, 2, 6, NOW()),
-  ('SEED-0007', 'Studio République',        'Idéal investissement locatif',3,'AVAILABLE',245000, 30,  1, 0, 'D', 'Paris',           '75011', FALSE, 2, 6, NOW());
+INSERT INTO `agencies` (`id`, `name`, `city`, `address`, `postal_code`, `phone`, `email`, `is_hq`, `created_at`, `updated_at`) VALUES (1,'Ymmo Siège','Aix-en-Provence','12 cours Mirabeau','13100','+33 4 42 00 10 00','siege@ymmo.fr',1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `agencies` (`id`, `name`, `city`, `address`, `postal_code`, `phone`, `email`, `is_hq`, `created_at`, `updated_at`) VALUES (2,'Ymmo Paris','Paris','8 rue de Rivoli','75001','+33 1 44 00 20 00','paris@ymmo.fr',0,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `agencies` (`id`, `name`, `city`, `address`, `postal_code`, `phone`, `email`, `is_hq`, `created_at`, `updated_at`) VALUES (3,'Ymmo Lyon','Lyon','24 rue de la République','69002','+33 4 72 00 30 00','lyon@ymmo.fr',0,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `agencies` (`id`, `name`, `city`, `address`, `postal_code`, `phone`, `email`, `is_hq`, `created_at`, `updated_at`) VALUES (4,'Ymmo Marseille','Marseille','5 quai du Port','13001','+33 4 91 00 40 00','marseille@ymmo.fr',0,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `agencies` (`id`, `name`, `city`, `address`, `postal_code`, `phone`, `email`, `is_hq`, `created_at`, `updated_at`) VALUES (5,'Ymmo Bordeaux','Bordeaux','17 cours de l\'Intendance','33000','+33 5 56 00 50 00','bordeaux@ymmo.fr',0,'2026-06-14 18:40:04','2026-06-14 18:40:04');
 
--- A couple of photos on the first property.
-INSERT INTO property_photos (property_id, url, sort_order, is_primary)
-SELECT id, 'https://placehold.co/800x600?text=Photo+1', 0, TRUE  FROM properties WHERE reference='SEED-0001';
-INSERT INTO property_photos (property_id, url, sort_order, is_primary)
-SELECT id, 'https://placehold.co/800x600?text=Photo+2', 1, FALSE FROM properties WHERE reference='SEED-0001';
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (1,'agent@ymmo.fr','$2b$10$TVzS9UGprQwiyuN6QlTUTudailOAbUZ.cyNfYaCnZ3XydYkQoK5Qa','Martin','Alice','+33 6 10 00 00 01',4,2,1,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (2,'director@ymmo.fr','$2b$10$K0Mm7jiJTYRDjv5xXNmb3O.TCRROlns0P7UmpwOFWD0j7JO54ZSmC','Bernard','Marc','+33 6 10 00 00 02',5,1,1,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (3,'buyer@ymmo.fr','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Petit','Sophie','+33 6 10 00 00 03',2,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (4,'hq@ymmo.fr','$2b$10$byR4yyTCwTVQvCPA/KP2TuoPC6Y1oCm87LjjAT5gkzF6YPtEeMFIe','Durand','Hélène','+33 6 10 00 00 04',6,1,1,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (5,'it@ymmo.fr','$2b$10$1A8gzlv.ewQPw0ud/CJz0.541JL2ASUEyvoeKBrY2UNxIQDuNoc2e','Rousseau','Karim','+33 6 10 00 00 05',7,5,1,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (6,'director.paris@ymmo.fr','$2b$10$I1SvMoSDb37EDcrs/MnbcONTNTIkgyzaVlBvrDUJWLCX/6U/vp7Wa','Moreau','Julie','+33 6 10 00 00 06',5,1,2,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (7,'agent.paris@ymmo.fr','$2b$10$TVzS9UGprQwiyuN6QlTUTudailOAbUZ.cyNfYaCnZ3XydYkQoK5Qa','Lefèvre','Thomas','+33 6 10 00 00 07',4,2,2,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (8,'agent.lyon@ymmo.fr','$2b$10$TVzS9UGprQwiyuN6QlTUTudailOAbUZ.cyNfYaCnZ3XydYkQoK5Qa','Benali','Nadia','+33 6 10 00 00 08',4,2,3,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (9,'agent.marseille@ymmo.fr','$2b$10$TVzS9UGprQwiyuN6QlTUTudailOAbUZ.cyNfYaCnZ3XydYkQoK5Qa','Garcia','Hugo','+33 6 10 00 00 09',4,2,4,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (10,'agent.bordeaux@ymmo.fr','$2b$10$TVzS9UGprQwiyuN6QlTUTudailOAbUZ.cyNfYaCnZ3XydYkQoK5Qa','Fontaine','Clara','+33 6 10 00 00 10',4,2,5,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (11,'agent2.paris@ymmo.fr','$2b$10$TVzS9UGprQwiyuN6QlTUTudailOAbUZ.cyNfYaCnZ3XydYkQoK5Qa','Roy','Antoine','+33 6 10 00 00 11',4,2,2,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (12,'director.lyon@ymmo.fr','$2b$10$K0Mm7jiJTYRDjv5xXNmb3O.TCRROlns0P7UmpwOFWD0j7JO54ZSmC','Lambert','Sylvie','+33 6 10 00 00 12',5,1,3,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (13,'lucas.martin@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Martin','Lucas','+33 6 20 00 00 13',2,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (14,'emma.dubois@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Dubois','Emma','+33 6 20 00 00 14',2,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (15,'nathan.girard@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Girard','Nathan','+33 6 20 00 00 15',2,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (16,'chloe.bonnet@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Bonnet','Chloé','+33 6 20 00 00 16',2,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (17,'maxime.lopez@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Lopez','Maxime','+33 6 20 00 00 17',2,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (18,'ines.fabre@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Fabre','Inès','+33 6 20 00 00 18',2,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (19,'philippe.gauthier@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Gauthier','Philippe','+33 6 20 00 00 19',3,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (20,'isabelle.henry@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Henry','Isabelle','+33 6 20 00 00 20',3,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+INSERT INTO `users` (`id`, `email`, `password_hash`, `last_name`, `first_name`, `phone`, `role_id`, `department_id`, `agency_id`, `is_active`, `created_at`, `updated_at`) VALUES (21,'olivier.masson@example.com','$2b$10$eBp33kzUuDCIwV3YG5tiz.pzFFLl.P8AjjgaAQb0jqQHZBXPZS31K','Masson','Olivier','+33 6 20 00 00 21',3,NULL,NULL,1,'2026-06-14 18:40:04','2026-06-14 18:40:04');
+
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (1,'YMMO-2026-0001','Appartement lumineux T3','Proche centre, balcon plein sud, dernier étage',2,'AVAILABLE',480000.00,75.00,3,2,1,NULL,NULL,'C','C','14 rue Oberkampf','Paris','75011',NULL,NULL,1,324,2,7,19,7,'2026-02-05 10:00:00','2026-02-06 09:00:00','2026-02-04 09:00:00','2026-06-14 18:46:32');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (2,'YMMO-2026-0002','Maison familiale 5 pièces','Jardin 400 m², garage double, quartier calme',1,'AVAILABLE',650000.00,140.00,5,4,2,NULL,NULL,'D','D','3 chemin des Oliviers','Aix-en-Provence','13100',NULL,NULL,0,214,1,1,20,1,'2026-01-20 10:00:00','2026-01-21 09:00:00','2026-01-19 09:00:00','2026-06-14 18:43:39');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (3,'YMMO-2026-0003','Studio étudiant','Idéal investissement locatif, proche fac',3,'AVAILABLE',180000.00,28.00,1,0,1,NULL,NULL,'E','E','9 rue de Marseille','Lyon','69002',NULL,NULL,0,413,3,8,NULL,8,'2026-02-12 10:00:00','2026-02-13 09:00:00','2026-02-11 09:00:00','2026-06-14 18:51:25');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (4,'YMMO-2026-0004','Bureau open-space','Quartier d\'affaires, climatisé, fibre',5,'AVAILABLE',320000.00,90.00,4,0,2,NULL,NULL,'C','C','2 quai du Port','Marseille','13002',NULL,NULL,0,98,4,9,NULL,9,'2026-03-02 10:00:00','2026-03-03 09:00:00','2026-03-01 09:00:00','2026-06-14 18:53:12');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (5,'YMMO-2026-0005','Appartement Haussmannien','Charme parisien, moulures, parquet point de Hongrie',2,'AVAILABLE',720000.00,95.00,4,2,2,NULL,NULL,'C','D','40 rue des Martyrs','Paris','75009',NULL,NULL,0,275,2,11,NULL,11,'2026-01-15 10:00:00','2026-01-16 09:00:00','2026-01-14 09:00:00','2026-06-14 19:16:59');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (6,'YMMO-2026-0006','Studio République','Meublé, parfait premier investissement',3,'AVAILABLE',245000.00,30.00,1,0,1,NULL,NULL,'D','D','11 rue du Temple','Paris','75011',NULL,NULL,0,153,2,7,NULL,7,'2026-02-18 10:00:00','2026-02-19 09:00:00','2026-02-17 09:00:00','2026-06-14 18:46:02');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (7,'YMMO-2026-0007','Villa avec piscine','Prestation haut de gamme, piscine chauffée, 1500 m²',1,'AVAILABLE',890000.00,180.00,6,4,3,NULL,NULL,'B','B','7 chemin de Bibémus','Aix-en-Provence','13090',NULL,NULL,1,309,1,1,21,1,'2026-01-28 10:00:00','2026-01-29 09:00:00','2026-01-27 09:00:00','2026-06-14 18:43:06');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (8,'YMMO-2026-0008','T2 cosy hypercentre','Rénové, lumineux, faibles charges',2,'AVAILABLE',235000.00,45.00,2,1,1,NULL,NULL,'D','D','5 rue Mercière','Lyon','69003',NULL,NULL,0,183,3,8,NULL,8,'2026-02-22 10:00:00','2026-02-23 09:00:00','2026-02-21 09:00:00','2026-06-14 18:50:58');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (9,'YMMO-2026-0009','Local commercial 120 m²','Forte visibilité, vitrine, fort passage',6,'AVAILABLE',410000.00,120.00,0,0,1,NULL,NULL,'D','E','17 cours de l\'Intendance','Bordeaux','33000',NULL,NULL,0,73,5,10,NULL,10,'2026-03-10 10:00:00','2026-03-11 09:00:00','2026-03-09 09:00:00','2026-06-14 18:56:09');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (10,'YMMO-2026-0010','Terrain constructible','Viabilisé, 600 m², CU obtenu',4,'AVAILABLE',160000.00,600.00,0,0,0,NULL,NULL,NULL,NULL,'Lieu-dit Les Pins','Bordeaux','33700',NULL,NULL,0,62,5,10,NULL,10,'2026-03-15 10:00:00','2026-03-16 09:00:00','2026-03-14 09:00:00','2026-06-14 18:55:44');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (11,'YMMO-2026-0011','Loft industriel','Volumes atypiques, verrière, 4 m sous plafond',2,'AVAILABLE',530000.00,110.00,3,2,1,NULL,NULL,'C','C','30 rue de la Loge','Marseille','13002',NULL,NULL,1,243,4,9,NULL,9,'2026-02-26 10:00:00','2026-02-27 09:00:00','2026-02-25 09:00:00','2026-06-14 18:53:49');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (12,'YMMO-2026-0012','Maison de ville','Patio, 3 chambres, proche écoles',1,'AVAILABLE',430000.00,105.00,4,3,1,NULL,NULL,'C','C','8 rue Garibaldi','Lyon','69007',NULL,NULL,0,133,3,8,NULL,8,'2026-03-04 10:00:00','2026-03-05 09:00:00','2026-03-03 09:00:00','2026-06-14 18:50:32');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (13,'YMMO-2026-0013','Appartement T4 balcon','Vue dégagée, ascenseur, parking',2,'UNDER_OFFER',560000.00,88.00,4,3,2,NULL,NULL,'C','C','21 rue de Vaugirard','Paris','75015',NULL,NULL,0,293,2,7,NULL,7,'2026-01-12 10:00:00','2026-01-13 09:00:00','2026-01-10 09:00:00','2026-06-14 18:47:04');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (14,'YMMO-2026-0014','Maison contemporaine','Construction récente, normes BBC',1,'UNDER_OFFER',540000.00,125.00,5,3,2,NULL,NULL,'B','B','4 allée des Tilleuls','Aix-en-Provence','13100',NULL,NULL,0,178,1,1,NULL,1,'2026-02-03 10:00:00','2026-02-04 09:00:00','2026-02-01 09:00:00','2026-06-14 18:42:40');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (15,'YMMO-2025-0015','Appartement vendu (réf. A)','Vente conclue, T3 proche métro',2,'SOLD',460000.00,72.00,3,2,1,NULL,NULL,'C','C','6 rue du Faubourg','Paris','75012',NULL,NULL,0,204,2,7,NULL,7,'2025-01-16 10:00:00','2025-01-17 09:00:00','2025-01-15 09:00:00','2026-06-14 18:47:46');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (16,'YMMO-2025-0016','Maison vendue','Vente conclue, maison avec jardin',1,'SOLD',610000.00,135.00,5,4,2,NULL,NULL,'D','D','2 chemin du Tholonet','Aix-en-Provence','13080',NULL,NULL,0,163,1,1,NULL,1,'2025-02-02 10:00:00','2025-02-03 09:00:00','2025-02-01 09:00:00','2026-06-14 18:44:10');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (17,'YMMO-2025-0017','Studio vendu','Vente conclue, studio investisseur',3,'SOLD',175000.00,27.00,1,0,1,NULL,NULL,'E','E','13 rue de la Charité','Lyon','69002',NULL,NULL,0,222,3,8,NULL,8,'2025-01-21 10:00:00','2025-01-22 09:00:00','2025-01-20 09:00:00','2026-06-14 18:52:21');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (18,'YMMO-2025-0018','Bureau vendu','Vente conclue, plateau de bureaux',5,'SOLD',300000.00,85.00,3,0,1,NULL,NULL,'C','C','9 quai de Rive Neuve','Marseille','13007',NULL,NULL,0,92,4,9,NULL,9,'2025-03-02 10:00:00','2025-03-03 09:00:00','2025-03-01 09:00:00','2026-06-14 18:54:15');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (19,'YMMO-2025-0019','Appartement vendu (réf. B)','Vente conclue, T3 rénové',2,'SOLD',495000.00,78.00,3,2,1,NULL,NULL,'C','C','18 rue de Lévis','Paris','75017',NULL,NULL,0,187,2,11,NULL,11,'2025-02-11 10:00:00','2025-02-12 09:00:00','2025-02-10 09:00:00','2026-06-14 18:49:47');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (20,'YMMO-2025-0020','Maison vendue Bordeaux','Vente conclue, maison de ville',1,'SOLD',470000.00,115.00,5,3,2,NULL,NULL,'C','C','22 rue Sainte-Catherine','Bordeaux','33000',NULL,NULL,0,112,5,10,NULL,10,'2025-04-06 10:00:00','2025-04-07 09:00:00','2025-04-05 09:00:00','2026-06-14 18:56:51');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (21,'YMMO-2026-0021','Appartement à valider','Soumis par un vendeur, en attente de validation agent',2,'PENDING_REVIEW',550000.00,82.00,3,2,1,NULL,NULL,'B','B','3 rue de Sèze','Paris','75008',NULL,NULL,1,0,2,NULL,19,NULL,NULL,NULL,'2026-03-18 09:00:00','2026-06-14 18:40:04');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (22,'YMMO-2026-0022','Brouillon agent','Annonce en cours de rédaction',1,'DRAFT',399000.00,100.00,4,3,1,NULL,NULL,'D','D','1 rue Brouillon','Aix-en-Provence','13100',NULL,NULL,0,2,1,1,NULL,NULL,NULL,NULL,'2026-03-20 09:00:00','2026-06-14 18:42:02');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (23,'YMMO-2026-0023','Bien retiré du marché','Annonce retirée à la demande du vendeur',2,'WITHDRAWN',380000.00,60.00,2,1,1,NULL,NULL,'D','D','7 rue Retirée','Lyon','69001',NULL,NULL,0,42,3,8,NULL,NULL,NULL,NULL,'2026-01-05 09:00:00','2026-06-14 18:51:54');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (24,'YMMO-2026-00024','Appartement résidentiel 45m²','Appartement en résidence, cosy et chaleaureux avec salle de sport',2,'AVAILABLE',240000.00,44.00,3,1,1,3,2012,'D','C','3 rue Irena Sandler','Toulouse','31200',NULL,NULL,1,5,4,10,NULL,NULL,NULL,NULL,'2026-06-14 18:59:24','2026-06-14 19:14:18');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (25,'YMMO-2026-00025','Container proche métro','Honnêtement il y\'a rien pour décrire cet appart à part petit et extrêmement chaud l\'été c\'est infâme ( j\'ai chaud quand j\'écris ça )\nIl est proche du métro c\'est déjà ça',2,'AVAILABLE',176500.00,16.00,1,1,1,3,1986,'E','F','2 Avenue de Fronton','Toulouse','31200',NULL,NULL,0,11,4,10,NULL,NULL,NULL,NULL,'2026-06-14 19:04:57','2026-06-14 19:18:44');
+INSERT INTO `properties` (`id`, `reference`, `title`, `description`, `category_id`, `status`, `price`, `area`, `rooms`, `bedrooms`, `bathrooms`, `floor`, `build_year`, `energy_rating`, `ghg_rating`, `address`, `city`, `postal_code`, `latitude`, `longitude`, `is_exclusive`, `view_count`, `agency_id`, `agent_id`, `seller_id`, `approved_by`, `approved_at`, `published_at`, `created_at`, `updated_at`) VALUES (26,'YMMO-2026-00026','colocation en appartement avec balcon','Grand appartement en résidence avec grand balcon',2,'AVAILABLE',220000.00,70.00,4,2,1,3,1975,'D','E','1 rue de la louisiane','Toulouse','31200',NULL,NULL,1,7,3,10,NULL,NULL,NULL,NULL,'2026-06-14 19:12:35','2026-06-14 19:14:04');
+
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (18,14,'http://localhost:8080/uploads/1781462556513259883-972be853.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (19,7,'http://localhost:8080/uploads/1781462584195577683-af5c07af.webp',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (20,2,'http://localhost:8080/uploads/1781462616213969677-397e5bb1.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (21,16,'http://localhost:8080/uploads/1781462648498765629-f3865ffd.webp',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (22,6,'http://localhost:8080/uploads/1781462762361811261-62edc872.webp',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (23,1,'http://localhost:8080/uploads/1781462791445030737-ea2949a4.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (24,13,'http://localhost:8080/uploads/1781462821980163188-7481bddb.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (26,15,'http://localhost:8080/uploads/1781462862042954581-54ea2d4d.webp',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (27,5,'http://localhost:8080/uploads/1781462963649254675-1ec1eb18.webp',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (28,19,'http://localhost:8080/uploads/1781462985520476932-d8e4d63b.jpeg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (29,12,'http://localhost:8080/uploads/1781463030802313662-89929f9a.webp',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (30,8,'http://localhost:8080/uploads/1781463057579982020-6a24017f.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (31,3,'http://localhost:8080/uploads/1781463083943181304-0972b52d.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (32,23,'http://localhost:8080/uploads/1781463112817984671-d7127808.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (33,17,'http://localhost:8080/uploads/1781463140174994494-0febbb19.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (34,4,'http://localhost:8080/uploads/1781463187868730595-7dd1056b.png',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (35,11,'http://localhost:8080/uploads/1781463228491824682-12ca9da4.webp',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (36,18,'http://localhost:8080/uploads/1781463254163808904-b2a9ff09.jpeg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (37,10,'http://localhost:8080/uploads/1781463340678701717-dc0818f1.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (38,9,'http://localhost:8080/uploads/1781463368771996553-3da83536.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (39,20,'http://localhost:8080/uploads/1781463407405516277-5c7fd7ef.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (40,24,'http://localhost:8080/uploads/1781463564099895512-c07f0d64.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (41,24,'http://localhost:8080/uploads/1781463569744042808-9f57b766.jpg',1,0);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (42,24,'http://localhost:8080/uploads/1781463572279758759-97a3d221.jpg',2,0);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (44,25,'http://localhost:8080/uploads/1781463913366021072-3766b556.jpg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (45,25,'http://localhost:8080/uploads/1781463917162116041-ace75405.jpg',1,0);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (46,25,'http://localhost:8080/uploads/1781463919833711415-5bdb1975.jpg',2,0);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (47,26,'http://localhost:8080/uploads/1781464355365055073-ae6e73bd.jpeg',0,1);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (48,26,'http://localhost:8080/uploads/1781464363069593377-7920350a.jpeg',1,0);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (49,26,'http://localhost:8080/uploads/1781464366079725974-cd32d00a.jpeg',2,0);
+INSERT INTO `property_photos` (`id`, `property_id`, `url`, `sort_order`, `is_primary`) VALUES (50,26,'http://localhost:8080/uploads/1781464369215213602-82d10ab8.jpeg',3,0);
+
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (3,1,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (3,5,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (3,7,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (13,1,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (13,3,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (13,8,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (14,2,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (14,7,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (14,11,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (15,5,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (15,13,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (15,25,'2026-06-14 19:17:13');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (16,8,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (16,12,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (17,2,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (17,11,'2026-06-14 18:40:04');
+INSERT INTO `favorites` (`user_id`, `property_id`, `created_at`) VALUES (18,1,'2026-06-14 18:40:04');
+
+INSERT INTO `alerts` (`id`, `user_id`, `city`, `category_id`, `min_price`, `max_price`, `min_area`, `max_energy`, `is_active`, `created_at`) VALUES (1,3,'Paris',2,300000.00,600000.00,50.00,'C',1,'2026-06-14 18:40:04');
+INSERT INTO `alerts` (`id`, `user_id`, `city`, `category_id`, `min_price`, `max_price`, `min_area`, `max_energy`, `is_active`, `created_at`) VALUES (2,13,'Lyon',3,NULL,220000.00,NULL,'D',1,'2026-06-14 18:40:04');
+INSERT INTO `alerts` (`id`, `user_id`, `city`, `category_id`, `min_price`, `max_price`, `min_area`, `max_energy`, `is_active`, `created_at`) VALUES (3,14,'Aix-en-Provence',1,400000.00,900000.00,100.00,'C',1,'2026-06-14 18:40:04');
+INSERT INTO `alerts` (`id`, `user_id`, `city`, `category_id`, `min_price`, `max_price`, `min_area`, `max_energy`, `is_active`, `created_at`) VALUES (4,16,NULL,NULL,NULL,250000.00,NULL,'D',1,'2026-06-14 18:40:04');
+INSERT INTO `alerts` (`id`, `user_id`, `city`, `category_id`, `min_price`, `max_price`, `min_area`, `max_energy`, `is_active`, `created_at`) VALUES (5,17,'Marseille',2,NULL,600000.00,80.00,'C',1,'2026-06-14 18:40:04');
+
+INSERT INTO `conversations` (`id`, `property_id`, `client_id`, `agent_id`, `client_deleted`, `agent_deleted`, `created_at`) VALUES (1,1,3,7,0,0,'2026-02-07 14:00:00');
+INSERT INTO `conversations` (`id`, `property_id`, `client_id`, `agent_id`, `client_deleted`, `agent_deleted`, `created_at`) VALUES (2,7,14,1,0,0,'2026-01-30 11:00:00');
+INSERT INTO `conversations` (`id`, `property_id`, `client_id`, `agent_id`, `client_deleted`, `agent_deleted`, `created_at`) VALUES (3,3,13,8,0,0,'2026-02-14 16:30:00');
+INSERT INTO `conversations` (`id`, `property_id`, `client_id`, `agent_id`, `client_deleted`, `agent_deleted`, `created_at`) VALUES (4,5,16,11,0,0,'2026-02-20 09:30:00');
+INSERT INTO `conversations` (`id`, `property_id`, `client_id`, `agent_id`, `client_deleted`, `agent_deleted`, `created_at`) VALUES (5,11,17,9,0,0,'2026-03-01 18:00:00');
+INSERT INTO `conversations` (`id`, `property_id`, `client_id`, `agent_id`, `client_deleted`, `agent_deleted`, `created_at`) VALUES (6,25,15,10,0,0,'2026-06-14 19:17:18');
+
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (1,1,3,'Bonjour, l\'appartement T3 est-il toujours disponible ?',1,'2026-02-07 14:00:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (2,1,7,'Bonjour, oui tout à fait. Souhaitez-vous organiser une visite ?',1,'2026-02-07 14:20:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (3,1,3,'Avec plaisir, plutôt en fin de semaine si possible.',1,'2026-02-07 15:05:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (4,1,7,'Parfait, je vous propose samedi 10h. Je vous confirme la visite.',0,'2026-02-07 15:30:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (5,2,14,'La villa dispose-t-elle d\'un système d\'alarme ?',1,'2026-01-30 11:00:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (6,2,1,'Oui, alarme et vidéosurveillance sont installées.',1,'2026-01-30 11:40:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (7,2,14,'Très bien, merci. Quel est le montant de la taxe foncière ?',1,'2026-01-30 12:10:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (8,3,13,'Le studio est-il vendu loué ?',1,'2026-02-14 16:30:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (9,3,8,'Non, il est vendu libre de toute occupation.',0,'2026-02-14 17:00:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (10,4,16,'Bonjour, le bien est-il éligible au prêt à taux zéro ?',1,'2026-02-20 09:30:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (11,4,11,'Bonjour, je vérifie et reviens vers vous rapidement.',0,'2026-02-20 10:15:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (12,5,17,'Le loft est-il raccordé à la fibre ?',0,'2026-03-01 18:00:00');
+INSERT INTO `messages` (`id`, `conversation_id`, `sender_id`, `body`, `is_read`, `created_at`) VALUES (13,6,15,'Le tacos à coté de l\'appartement est bon ?',0,'2026-06-14 19:17:30');
+
+INSERT INTO `visits` (`id`, `property_id`, `client_id`, `agent_id`, `scheduled_at`, `status`, `notes`, `created_at`) VALUES (1,1,3,7,'2026-06-20 10:00:00','CONFIRMED','Première visite, client motivé','2026-06-14 18:40:04');
+INSERT INTO `visits` (`id`, `property_id`, `client_id`, `agent_id`, `scheduled_at`, `status`, `notes`, `created_at`) VALUES (2,7,14,1,'2026-06-22 15:00:00','REQUESTED',NULL,'2026-06-14 18:40:04');
+INSERT INTO `visits` (`id`, `property_id`, `client_id`, `agent_id`, `scheduled_at`, `status`, `notes`, `created_at`) VALUES (3,3,13,8,'2026-02-28 11:00:00','COMPLETED','Visite réalisée, en réflexion','2026-06-14 18:40:04');
+INSERT INTO `visits` (`id`, `property_id`, `client_id`, `agent_id`, `scheduled_at`, `status`, `notes`, `created_at`) VALUES (4,5,16,11,'2026-06-25 14:00:00','CONFIRMED',NULL,'2026-06-14 18:40:04');
+INSERT INTO `visits` (`id`, `property_id`, `client_id`, `agent_id`, `scheduled_at`, `status`, `notes`, `created_at`) VALUES (5,11,17,9,'2026-03-05 17:00:00','CANCELLED','Annulée par le client','2026-06-14 18:40:04');
+INSERT INTO `visits` (`id`, `property_id`, `client_id`, `agent_id`, `scheduled_at`, `status`, `notes`, `created_at`) VALUES (6,2,18,1,'2026-06-27 09:30:00','REQUESTED',NULL,'2026-06-14 18:40:04');
+
+INSERT INTO `meetings` (`id`, `agency_id`, `organizer_id`, `title`, `description`, `start_at`, `end_at`, `location`, `created_at`) VALUES (1,1,2,'Réunion hebdomadaire agence Aix','Point sur les mandats en cours et les visites de la semaine.','2026-06-16 09:00:00','2026-06-16 10:00:00','Salle de réunion - Aix','2026-06-14 18:40:04');
+INSERT INTO `meetings` (`id`, `agency_id`, `organizer_id`, `title`, `description`, `start_at`, `end_at`, `location`, `created_at`) VALUES (2,2,6,'Point ventes Paris','Suivi des dossiers de vente et négociations en cours.','2026-06-17 14:00:00','2026-06-17 15:30:00','Bureau direction - Paris','2026-06-14 18:40:04');
+INSERT INTO `meetings` (`id`, `agency_id`, `organizer_id`, `title`, `description`, `start_at`, `end_at`, `location`, `created_at`) VALUES (3,1,4,'Revue stratégique siège','Analyse des KPIs réseau et des zones stratégiques (IA).','2026-06-18 11:00:00','2026-06-18 12:30:00','Visioconférence','2026-06-14 18:40:04');
+
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (1,1);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (1,2);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (3,2);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (1,4);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (3,4);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (2,6);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (3,6);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (2,7);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (2,11);
+INSERT INTO `meeting_participants` (`meeting_id`, `user_id`) VALUES (3,12);
+
+INSERT INTO `sale_files` (`id`, `property_id`, `buyer_id`, `agent_id`, `status`, `negotiated_price`, `offer_date`, `contract_date`, `deed_date`, `created_at`, `updated_at`) VALUES (1,15,3,7,'COMPLETED',450000.00,'2025-04-20','2025-05-25','2025-07-10','2025-04-18 09:00:00','2026-06-14 18:40:04');
+INSERT INTO `sale_files` (`id`, `property_id`, `buyer_id`, `agent_id`, `status`, `negotiated_price`, `offer_date`, `contract_date`, `deed_date`, `created_at`, `updated_at`) VALUES (2,16,14,1,'COMPLETED',600000.00,'2025-05-10','2025-06-18','2025-08-05','2025-05-08 09:00:00','2026-06-14 18:40:04');
+INSERT INTO `sale_files` (`id`, `property_id`, `buyer_id`, `agent_id`, `status`, `negotiated_price`, `offer_date`, `contract_date`, `deed_date`, `created_at`, `updated_at`) VALUES (3,17,13,8,'COMPLETED',172000.00,'2025-03-05','2025-04-02','2025-05-20','2025-03-03 09:00:00','2026-06-14 18:40:04');
+INSERT INTO `sale_files` (`id`, `property_id`, `buyer_id`, `agent_id`, `status`, `negotiated_price`, `offer_date`, `contract_date`, `deed_date`, `created_at`, `updated_at`) VALUES (4,18,17,9,'COMPLETED',295000.00,'2025-06-15','2025-07-20','2025-09-12','2025-06-13 09:00:00','2026-06-14 18:40:04');
+INSERT INTO `sale_files` (`id`, `property_id`, `buyer_id`, `agent_id`, `status`, `negotiated_price`, `offer_date`, `contract_date`, `deed_date`, `created_at`, `updated_at`) VALUES (5,19,15,11,'COMPLETED',490000.00,'2025-04-01','2025-05-06','2025-06-28','2025-03-30 09:00:00','2026-06-14 18:40:04');
+INSERT INTO `sale_files` (`id`, `property_id`, `buyer_id`, `agent_id`, `status`, `negotiated_price`, `offer_date`, `contract_date`, `deed_date`, `created_at`, `updated_at`) VALUES (6,20,18,10,'COMPLETED',462000.00,'2025-08-20','2025-09-25','2025-11-15','2025-08-18 09:00:00','2026-06-14 18:40:04');
+INSERT INTO `sale_files` (`id`, `property_id`, `buyer_id`, `agent_id`, `status`, `negotiated_price`, `offer_date`, `contract_date`, `deed_date`, `created_at`, `updated_at`) VALUES (7,13,16,7,'PRELIMINARY_CONTRACT',552000.00,'2026-03-15','2026-04-20',NULL,'2026-03-13 09:00:00','2026-06-14 18:40:04');
+INSERT INTO `sale_files` (`id`, `property_id`, `buyer_id`, `agent_id`, `status`, `negotiated_price`, `offer_date`, `contract_date`, `deed_date`, `created_at`, `updated_at`) VALUES (8,14,3,1,'OFFER',535000.00,'2026-04-10',NULL,NULL,'2026-04-08 09:00:00','2026-06-14 18:40:04');
+
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (1,1,3,'2026-06-10 08:15:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (2,1,13,'2026-06-10 19:40:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (3,1,NULL,'2026-06-11 10:05:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (4,1,18,'2026-06-12 21:30:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (5,3,13,'2026-06-09 12:00:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (6,3,NULL,'2026-06-09 14:20:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (7,3,NULL,'2026-06-11 09:10:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (8,5,15,'2026-06-08 18:45:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (9,5,16,'2026-06-10 11:25:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (10,5,NULL,'2026-06-12 16:00:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (11,7,14,'2026-06-07 09:30:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (12,7,NULL,'2026-06-11 20:15:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (13,7,3,'2026-06-12 13:50:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (14,11,17,'2026-06-09 17:05:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (15,11,NULL,'2026-06-12 08:40:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (16,13,15,'2026-06-06 10:00:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (17,13,NULL,'2026-06-10 22:10:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (18,2,17,'2026-06-08 15:30:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (19,8,16,'2026-06-11 11:00:00');
+INSERT INTO `property_views` (`id`, `property_id`, `user_id`, `created_at`) VALUES (20,12,NULL,'2026-06-12 19:20:00');
+
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (1,'Paris',2,6250.00,12,'2025-10-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (2,'Paris',2,6380.00,9,'2025-11-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (3,'Paris',2,6420.00,11,'2025-12-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (4,'Paris',2,6550.00,14,'2026-01-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (5,'Aix-en-Provence',1,4520.00,6,'2025-11-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (6,'Aix-en-Provence',1,4610.00,7,'2025-12-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (7,'Aix-en-Provence',1,4680.00,5,'2026-01-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (8,'Lyon',3,5750.00,8,'2025-12-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (9,'Lyon',3,5880.00,10,'2026-01-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (10,'Marseille',5,3450.00,4,'2025-12-01');
+INSERT INTO `price_history` (`id`, `city`, `category_id`, `avg_price_per_m2`, `sales_count`, `period`) VALUES (11,'Bordeaux',1,4100.00,5,'2026-01-01');
+
+INSERT INTO `seller_applications` (`id`, `user_id`, `status`, `motivation`, `reviewed_by`, `created_at`, `reviewed_at`) VALUES (1,15,'PENDING','Je souhaite vendre un appartement hérité.',NULL,'2026-03-12 10:00:00',NULL);
+INSERT INTO `seller_applications` (`id`, `user_id`, `status`, `motivation`, `reviewed_by`, `created_at`, `reviewed_at`) VALUES (2,19,'APPROVED','Mise en vente de ma résidence secondaire.',7,'2026-01-20 10:00:00','2026-01-21 09:00:00');
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*M!100616 SET NOTE_VERBOSITY=@OLD_NOTE_VERBOSITY */;
+

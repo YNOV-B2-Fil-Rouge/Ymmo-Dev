@@ -54,8 +54,8 @@ export const api = {
   login: (payload) => request("/auth/login", { method: "POST", body: payload }),
   me: () => request("/auth/me", { auth: true }),
 
-  listProperties: (queryString = "") => request(`/properties${queryString}`),
-  getProperty: (id) => request(`/properties/${id}`),
+  listProperties: (queryString = "") => request(`/properties${queryString}`, { auth: true }),
+  getProperty: (id) => request(`/properties/${id}`, { auth: true }),
   myProperties: () => request("/me/properties", { auth: true }),
   createProperty: (payload) => request("/properties", { method: "POST", body: payload, auth: true }),
   updateProperty: (id, payload) => request(`/properties/${id}`, { method: "PUT", body: payload, auth: true }),
@@ -74,6 +74,7 @@ export const api = {
   rejectSellerApplication: (id) => request(`/management/seller-applications/${id}/reject`, { method: "POST", auth: true }),
 
   allUsers: () => request("/management/users", { auth: true }),
+  deleteUser: (id) => request(`/management/users/${id}`, { method: "DELETE", auth: true }),
   permissionsMatrix: () => request("/management/permissions", { auth: true }),
 
   addPhoto: (id, payload) => request(`/properties/${id}/photos`, { method: "POST", body: payload, auth: true }),
@@ -107,6 +108,8 @@ export const api = {
   getMessages: (id) => request(`/conversations/${id}/messages`, { auth: true }),
   sendMessage: (id, body) => request(`/conversations/${id}/messages`, { method: "POST", body: { body }, auth: true }),
   unreadCount: () => request("/messages/unread-count", { auth: true }),
+
+  deleteMe: () => request("/me", { method: "DELETE", auth: true }),
 
   ping: () => request("/ping"),
 };

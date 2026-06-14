@@ -26,6 +26,7 @@ func NewFavoriteHandler(svc *services.FavoriteService) *FavoriteHandler {
 // @Success      204  "No Content"
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
+// @Failure      409  {object}  map[string]string
 // @Router       /properties/{id}/favorites [post]
 func (h *FavoriteHandler) Add(c *gin.Context) {
 	id, ok := parseID(c)
@@ -36,6 +37,10 @@ func (h *FavoriteHandler) Add(c *gin.Context) {
 	if err := h.svc.Add(userID, id); err != nil {
 		if errors.Is(err, services.ErrPropertyNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
+			return
+		}
+		if errors.Is(err, services.ErrPropertyNotPublic) {
+			c.JSON(http.StatusConflict, gin.H{"error": "property is not available"})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add favorite"})

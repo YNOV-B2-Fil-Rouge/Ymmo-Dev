@@ -3,6 +3,7 @@ package repositories
 
 import (
 	"errors"
+	"fmt"
 
 	"gorm.io/gorm"
 
@@ -77,6 +78,22 @@ func (r *UserRepository) ListInternalByAgency(agencyID uint16) ([]models.User, e
 		Order("users.last_name").
 		Find(&users).Error
 	return users, err
+}
+
+// SoftDelete anonymizes the user's personal data and deactivates the account.
+// It keeps the row (and every foreign-key reference: properties, sales,
+// conversations…) so deletion never fails on a constraint and history stays intact.
+func (r *UserRepository) SoftDelete(id uint) error {
+	return r.db.Model(&models.User{}).
+		Where("id = ?", id).
+		Updates(map[string]any{
+			"email":         fmt.Sprintf("deleted_%d@ymmo.invalid", id),
+			"first_name":    "Compte",
+			"last_name":     "supprimé",
+			"phone":         nil,
+			"password_hash": "!", // not a valid bcrypt hash -> login always fails
+			"is_active":     false,
+		}).Error
 }
 
 func (r *UserRepository) ExistsByEmail(email string) (bool, error) {

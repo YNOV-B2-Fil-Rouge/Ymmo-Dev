@@ -139,6 +139,8 @@ CREATE TABLE properties (
   CONSTRAINT fk_properties_approver FOREIGN KEY (approved_by) REFERENCES users(id),
   CONSTRAINT chk_properties_price   CHECK (price >= 0),
   CONSTRAINT chk_properties_area    CHECK (area > 0),
+  CONSTRAINT chk_properties_floor   CHECK (floor IS NULL OR floor >= 0),
+  CONSTRAINT chk_properties_year    CHECK (build_year IS NULL OR build_year BETWEEN 1700 AND 2100),
   -- Indexes designed for the search engine (price/city/area/energy filters)
   INDEX idx_properties_status (status),
   INDEX idx_properties_city (city),
