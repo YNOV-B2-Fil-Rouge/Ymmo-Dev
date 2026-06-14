@@ -65,4 +65,24 @@
           <h3 class="font-semibold text-hibiscus mt-8 mb-3">Liens techniques</h3>
           <div class="flex flex-wrap gap-3">
             <a id="swagger-link" href="#" target="_blank" rel="noopener"
-               class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-2 rounded-md transition-col
+               class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-2 rounded-md transition-colors">
+              Documentation API (Swagger UI)
+            </a>
+            <button id="ping-btn" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-2 rounded-md transition-colors">
+              Tester l'API (/ping)
+            </button>
+            <span id="ping-result" class="text-sm self-center"></span>
+          </div>
+        </div>
+
+        <div id="panel-annuaire" class="panel hidden">
+          <h2 class="text-2xl font-bold mb-6">Annuaire collaborateurs</h2>
+          <div id="collab-table" class="overflow-x-auto"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./js/dashboard-it.js"></script>
+</body>
+</html>

@@ -84,4 +84,30 @@
         </div>
 
         <div id="panel-settings" class="panel hidden">
-          <h1 class="text-2xl font
+          <h1 class="text-2xl font-bold mb-6">Paramètres du compte :</h1>
+          <dl class="space-y-3 max-w-md">
+            <div class="flex justify-between border-b border-slate2/20 pb-2">
+              <dt class="text-slate2">Nom</dt><dd id="set-name" class="font-medium"></dd>
+            </div>
+            <div class="flex justify-between border-b border-slate2/20 pb-2">
+              <dt class="text-slate2">Email</dt><dd id="set-email" class="font-medium"></dd>
+            </div>
+            <div class="flex justify-between border-b border-slate2/20 pb-2">
+              <dt class="text-slate2">Rôle</dt><dd id="set-role" class="font-medium"></dd>
+            </div>
+          </dl>
+          <p class="text-slate2 text-sm mt-4">La modification du profil et la suppression du compte seront disponibles prochainement.</p>
+
+          <div id="seller-cta" class="hidden mt-6 border border-gold/60 rounded-lg p-4 bg-white max-w-md"></div>
+
+          <button id="logout-btn" class="mt-6 border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white font-medium px-6 py-2.5 rounded-lg transition-colors">
+            Se déconnecter
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./js/profile.js"></script>
+</body>
+</html>
