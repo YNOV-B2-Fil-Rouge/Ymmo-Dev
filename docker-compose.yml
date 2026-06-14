@@ -20,9 +20,14 @@ services:
       - "3306"
     volumes:
       - db_data:/var/lib/mysql
-      # Run on first startup (empty data volume), in alphabetical order.
+      # Run on first startup (empty data volume), in alphabetical order:
+      #   01 schema → 02 reference data → 03 read-only AI user → 04 demo seed.
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./db/init-ai-user.sh:/docker-entrypoint-initdb.d/02-ai-user.sh:ro
+      - ./db/reference-data.sql:/docker-entrypoint-initdb.d/02-reference-data.sql:ro
+      - ./db/init-ai-user.sh:/docker-entrypoint-initdb.d/03-ai-user.sh:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/04-seed.sql:ro
+    networks:
+      - api_db
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
@@ -49,6 +54,16 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+      # Internal URL of the Python AI service (proxied via /api/v1/ai/*).
+      AI_BASE_URL: http://ai:8000
+      # Property photo uploads: on-disk dir (a volume) + public URL to build links.
+      UPLOAD_DIR: /app/uploads
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+    volumes:
+      - uploads:/app/uploads
+    networks:
+      - front_api
+      - api_db
     ports:
       - "8080:8080"
 
@@ -69,14 +84,40 @@ services:
       DB_USER: ${AI_DB_USER}
       DB_PASSWORD: ${AI_DB_PASSWORD}
       DB_NAME: ${DB_NAME}
+    networks:
+      - api_db
     # No public port: the AI service is reachable ONLY on the internal Docker
     # network (e.g. by the Go API at http://ai:8000). It is never exposed on
     # localhost:8000.
     expose:
       - "8000"
 
+  # ---------- Front-end (static, served by nginx) ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ymmo-front
+    restart: unless-stopped
+    depends_on:
+      - api # not a hard dependency (the browser calls the API), just ordering
+    networks:
+      - front_api
+    ports:
+      # Browse the app at http://localhost
+      - "80:80"
+
 volumes:
   db_data:
     # Explicit name so the volume is stable regardless of the project folder
     # name (otherwise Docker prefixes it, e.g. "<folder>_db_data").
     name: ymmo_db_data
+  uploads:
+    # Stores uploaded property photos, persisted across container rebuilds.
+    name: ymmo_uploads
+
+networks:
+  front_api:
+    name: ymmo_front_api
+  api_db:
+    name: ymmo_api_db

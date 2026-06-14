@@ -1,9 +1,4 @@
-"""Ymmo Data/AI microservice.
-
-A small FastAPI app that reads the Ymmo database and exposes analytical
-endpoints (market trends, popular listings, price estimation, strategic
-zones). The Go API or the front-end call it over HTTP.
-"""
+"""FastAPI Data/AI microservice: reads the Ymmo DB and exposes analytics endpoints."""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -15,10 +10,9 @@ app = FastAPI(
     description="Analytics & predictions for the Ymmo platform.",
 )
 
-# Allow the front-end (served from another origin) to call the AI service.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "http://localhost"],
     allow_methods=["*"],
     allow_headers=["*"],
 )

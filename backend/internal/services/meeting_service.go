@@ -24,13 +24,11 @@ func NewMeetingService(meetings *repositories.MeetingRepository) *MeetingService
 	return &MeetingService{meetings: meetings}
 }
 
-// Create schedules a meeting and links its participants.
 func (s *MeetingService) Create(organizerID uint, req dto.CreateMeetingRequest) (*models.Meeting, error) {
 	if !req.EndAt.After(req.StartAt) || req.StartAt.Before(time.Now()) {
 		return nil, ErrInvalidMeetingTime
 	}
 
-	// Prevent the organizer from scheduling two meetings at the same start time.
 	exists, err := s.meetings.ExistsAtTime(organizerID, req.StartAt)
 	if err != nil {
 		return nil, err
@@ -62,12 +60,10 @@ func (s *MeetingService) Create(organizerID uint, req dto.CreateMeetingRequest) 
 	return s.meetings.FindByID(meeting.ID)
 }
 
-// List returns the user's meetings (organized or attended).
 func (s *MeetingService) List(userID uint) ([]models.Meeting, error) {
 	return s.meetings.ListForUser(userID)
 }
 
-// Delete removes a meeting, restricted to its organizer.
 func (s *MeetingService) Delete(userID, meetingID uint) error {
 	meeting, err := s.meetings.FindByID(meetingID)
 	if err != nil {

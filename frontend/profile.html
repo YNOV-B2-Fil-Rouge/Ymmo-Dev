@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ymmo - Mon profil</title>
+  <link rel="icon" type="image/png" href="./img/logo.png" />
+  <meta name="description" content="Votre espace personnel Ymmo." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/tailwind-config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au contenu</a>
+
+  <header class="bg-alyssum border-b-2 border-hibiscus">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center">
+      <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
+        <img src="./img/logo-title.png" alt="Ymmo" class="h-12 w-auto" />
+      </a>
+    </div>
+  </header>
+
+  <main id="main" class="flex-1 max-w-6xl mx-auto w-full px-4 py-10">
+    <div class="grid md:grid-cols-[280px_1fr] gap-8">
+
+      <aside class="md:border-r border-hibiscus/30 md:pr-8">
+        <div id="avatar" class="w-28 h-28 rounded-full bg-hibiscus text-white flex items-center justify-center text-3xl font-semibold mx-auto" aria-hidden="true">—</div>
+        <p id="full-name" class="text-center text-xl font-bold mt-4">…</p>
+
+        <nav class="mt-8 space-y-3" aria-label="Sections du profil">
+          <button data-tab="biens" class="profile-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">
+            Mes biens (<span id="count-biens">0</span>)
+          </button>
+          <button data-tab="favoris" class="profile-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">
+            Mes favoris (<span id="count-favoris">0</span>)
+          </button>
+          <button data-tab="settings" class="profile-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">
+            Paramètres du compte
+          </button>
+          <button data-tab="visites" class="profile-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">
+            Mes visites (<span id="count-visites">0</span>)
+          </button>
+          <button data-tab="alertes" class="profile-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">
+            Mes alertes (<span id="count-alertes">0</span>)
+          </button>
+          <a href="./messages.html" class="block w-full text-center border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg hover:bg-hibiscus hover:text-white transition-colors">
+            Messagerie
+          </a>
+        </nav>
+      </aside>
+
+      <section>
+        <div id="panel-biens" class="panel hidden">
+          <h1 class="text-2xl font-bold mb-6">Mes biens :</h1>
+          <p class="text-slate2">La gestion de vos biens arrivera bientôt.</p>
+        </div>
+
+        <div id="panel-visites" class="panel hidden">
+          <h1 class="text-2xl font-bold mb-6">Mes visites :</h1>
+          <ul id="visites-list" class="space-y-3"></ul>
+          <p id="visites-empty" class="hidden text-slate2">Vous n'avez aucune visite. Demandez-en une depuis une fiche bien.</p>
+        </div>
+
+        <div id="panel-alertes" class="panel hidden">
+          <h1 class="text-2xl font-bold mb-6">Mes alertes :</h1>
+          <ul id="alertes-list" class="space-y-3"></ul>
+          <p id="alertes-empty" class="hidden text-slate2">Vous n'avez aucune alerte. Créez-en une depuis la recherche.</p>
+        </div>
+
+        <div id="panel-favoris" class="panel">
+          <h1 class="text-2xl font-bold mb-6">Mes favoris :</h1>
+          <div id="favoris-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+          <p id="favoris-empty" class="hidden text-slate2">Vous n'avez pas encore de favoris.</p>
+        </div>
+
+        <div id="panel-settings" class="panel hidden">
+          <h1 class="text-2xl font-bold mb-6">Paramètres du compte :</h1>
+          <dl class="space-y-3 max-w-md">
+            <div class="flex justify-between border-b border-slate2/20 pb-2">
+              <dt class="text-slate2">Nom</dt><dd id="set-name" class="font-medium"></dd>
+            </div>
+            <div class="flex justify-between border-b border-slate2/20 pb-2">
+              <dt class="text-slate2">Email</dt><dd id="set-email" class="font-medium"></dd>
+            </div>
+            <div class="flex justify-between border-b border-slate2/20 pb-2">
+              <dt class="text-slate2">Rôle</dt><dd id="set-role" class="font-medium"></dd>
+            </div>
+          </dl>
+          <div id="seller-cta" class="hidden mt-6 border border-gold/60 rounded-lg p-4 bg-white max-w-md"></div>
+
+          <button id="logout-btn" class="mt-6 border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white font-medium px-6 py-2.5 rounded-lg transition-colors">
+            Se déconnecter
+          </button>
+
+          <div class="mt-10 pt-6 border-t border-hibiscus/30 max-w-md">
+            <h2 class="font-semibold text-hibiscus">Zone de danger</h2>
+            <p class="text-sm text-slate2 mt-1">La suppression de votre compte anonymise vos données personnelles et est définitive. Vous serez déconnecté.</p>
+            <button id="delete-account-btn" class="mt-3 bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-6 py-2.5 rounded-lg transition-colors">
+              Supprimer mon compte
+            </button>
+            <p id="delete-account-msg" class="hidden mt-2 text-sm text-hibiscus" role="alert"></p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./js/profile.js"></script>
+</body>
+</html>

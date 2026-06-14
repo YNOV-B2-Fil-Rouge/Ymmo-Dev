@@ -24,15 +24,12 @@ func NewAlertService(alerts *repositories.AlertRepository) *AlertService {
 	return &AlertService{alerts: alerts}
 }
 
-// Create saves a new active alert for the user, after validating it.
 func (s *AlertService) Create(userID uint, req dto.CreateAlertRequest) (*models.Alert, error) {
-	// 1. Reject an empty alert (no criterion at all).
 	if req.City == "" && req.CategoryID == nil && req.MinPrice == nil &&
 		req.MaxPrice == nil && req.MinArea == nil && req.MaxEnergy == "" {
 		return nil, ErrEmptyAlert
 	}
 
-	// 2. Reject an unknown category (clean 400 instead of a FK 500).
 	if req.CategoryID != nil {
 		ok, err := s.alerts.CategoryExists(*req.CategoryID)
 		if err != nil {
@@ -58,7 +55,6 @@ func (s *AlertService) Create(userID uint, req dto.CreateAlertRequest) (*models.
 		alert.MaxEnergy = &req.MaxEnergy
 	}
 
-	// 3. Reject a duplicate of one the SAME user already has.
 	dup, err := s.alerts.ExistsIdentical(alert)
 	if err != nil {
 		return nil, err
@@ -73,12 +69,10 @@ func (s *AlertService) Create(userID uint, req dto.CreateAlertRequest) (*models.
 	return alert, nil
 }
 
-// List returns the user's alerts.
 func (s *AlertService) List(userID uint) ([]models.Alert, error) {
 	return s.alerts.ListForUser(userID)
 }
 
-// Delete removes an alert, but only if it belongs to the user.
 func (s *AlertService) Delete(userID, alertID uint) error {
 	alert, err := s.alerts.FindByID(alertID)
 	if err != nil {

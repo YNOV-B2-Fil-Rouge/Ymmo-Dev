@@ -20,9 +20,6 @@ var (
 	ErrInvalidSaleTransition = errors.New("invalid sale status transition")
 )
 
-// saleTransitions defines the allowed forward moves of the sale lifecycle.
-// Cancellation is possible from any non-terminal state; COMPLETED/CANCELLED
-// are terminal.
 var saleTransitions = map[string][]string{
 	models.SaleStatusOffer:               {models.SaleStatusPreliminaryContract, models.SaleStatusCancelled},
 	models.SaleStatusPreliminaryContract: {models.SaleStatusDeed, models.SaleStatusCancelled},
@@ -31,7 +28,7 @@ var saleTransitions = map[string][]string{
 
 func isValidSaleTransition(current, next string) bool {
 	if current == next {
-		return true // no-op
+		return true
 	}
 	for _, allowed := range saleTransitions[current] {
 		if allowed == next {
@@ -51,7 +48,6 @@ func NewSaleService(sales *repositories.SaleRepository, properties *repositories
 	return &SaleService{sales: sales, properties: properties, users: users}
 }
 
-// Create opens a sale file. The current user (an agent) handles it.
 func (s *SaleService) Create(agentID uint, req dto.CreateSaleRequest) (*models.SaleFile, error) {
 	property, err := s.properties.FindByID(req.PropertyID)
 	if err != nil {
@@ -68,17 +64,14 @@ func (s *SaleService) Create(agentID uint, req dto.CreateSaleRequest) (*models.S
 	if buyer == nil {
 		return nil, ErrBuyerNotFound
 	}
-	// The buyer_id must really be a buyer (not an agent or any other role).
 	if buyer.Role == nil || buyer.Role.Code != "BUYER" {
 		return nil, ErrNotABuyer
 	}
 
-	// An offer cannot be dated in the past.
 	if req.OfferDate != nil && req.OfferDate.Before(time.Now().Truncate(24*time.Hour)) {
 		return nil, ErrPastOffer
 	}
 
-	// Prevent a duplicate active sale for the same property + buyer.
 	exists, err := s.sales.ExistsActive(req.PropertyID, req.BuyerID)
 	if err != nil {
 		return nil, err
@@ -101,12 +94,10 @@ func (s *SaleService) Create(agentID uint, req dto.CreateSaleRequest) (*models.S
 	return sale, nil
 }
 
-// List returns the user's sale files (as buyer or agent).
 func (s *SaleService) List(userID uint) ([]models.SaleFile, error) {
 	return s.sales.ListForUser(userID)
 }
 
-// Get returns a sale file if the user is a participant.
 func (s *SaleService) Get(userID, saleID uint) (*models.SaleFile, error) {
 	sale, err := s.sales.FindByID(saleID)
 	if err != nil {
@@ -121,8 +112,6 @@ func (s *SaleService) Get(userID, saleID uint) (*models.SaleFile, error) {
 	return sale, nil
 }
 
-// Update advances a sale file (the sale's agent only). When the sale is marked
-// COMPLETED, the linked property is automatically set to SOLD.
 func (s *SaleService) Update(userID, saleID uint, req dto.UpdateSaleRequest) (*models.SaleFile, error) {
 	sale, err := s.sales.FindByID(saleID)
 	if err != nil {
@@ -135,8 +124,6 @@ func (s *SaleService) Update(userID, saleID uint, req dto.UpdateSaleRequest) (*m
 		return nil, ErrNotSaleAgent
 	}
 
-	// Enforce a sequential lifecycle: you cannot skip a step (e.g. OFFER →
-	// COMPLETED). Cancellation is allowed from any non-terminal state.
 	if req.Status != nil && !isValidSaleTransition(sale.Status, *req.Status) {
 		return nil, ErrInvalidSaleTransition
 	}
@@ -148,7 +135,6 @@ func (s *SaleService) Update(userID, saleID uint, req dto.UpdateSaleRequest) (*m
 		}
 	}
 
-	// Business rule: a completed sale marks its property as sold.
 	if req.Status != nil && *req.Status == models.SaleStatusCompleted {
 		if err := s.properties.Update(sale.PropertyID, map[string]interface{}{"status": models.PropertyStatusSold}); err != nil {
 			return nil, err

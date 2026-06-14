@@ -11,11 +11,7 @@ import (
 var (
 	ErrConversationNotFound = errors.New("conversation not found")
 	ErrReceiverNotFound     = errors.New("receiver not found")
-	// ErrInvalidParticipants is returned when the client/agent pairing is not
-	// allowed (talking to yourself, agent↔agent, buyer↔buyer, etc.).
 	ErrInvalidParticipants = errors.New("invalid conversation participants")
-	// ErrNotParticipant guards access: a user may only touch conversations
-	// they are part of (the brief's "secure messaging" requirement).
 	ErrNotParticipant = errors.New("not a participant of this conversation")
 )
 
@@ -28,12 +24,6 @@ func NewMessageService(conversations *repositories.ConversationRepository, users
 	return &MessageService{conversations: conversations, users: users}
 }
 
-// StartConversation opens a thread, enforcing a valid client/agent pairing:
-//   - a client (BUYER/SELLER) may only start a thread with an AGENT;
-//   - an AGENT may only start a thread with a BUYER;
-//   - talking to yourself, agent↔agent or buyer↔buyer is rejected.
-// req.AgentID carries the *receiver* id. If an identical thread already exists
-// it is returned instead of creating a duplicate.
 func (s *MessageService) StartConversation(initiatorID uint, initiatorRole string, req dto.StartConversationRequest) (*models.Conversation, error) {
 	receiverID := req.AgentID
 	if receiverID == initiatorID {
@@ -52,7 +42,6 @@ func (s *MessageService) StartConversation(initiatorID uint, initiatorRole strin
 		receiverRole = receiver.Role.Code
 	}
 
-	// Decide who is the client and who is the agent, based on roles.
 	var clientID, agentID uint
 	switch initiatorRole {
 	case "AGENT":
@@ -66,7 +55,6 @@ func (s *MessageService) StartConversation(initiatorID uint, initiatorRole strin
 		}
 		clientID, agentID = initiatorID, receiverID
 	default:
-		// Directors, HQ, IT... don't start client conversations here.
 		return nil, ErrInvalidParticipants
 	}
 
@@ -89,12 +77,10 @@ func (s *MessageService) StartConversation(initiatorID uint, initiatorRole strin
 	return conv, nil
 }
 
-// List returns the user's conversations.
 func (s *MessageService) List(userID uint) ([]models.Conversation, error) {
 	return s.conversations.ListForUser(userID)
 }
 
-// SendMessage posts a message, after checking the user belongs to the thread.
 func (s *MessageService) SendMessage(userID, conversationID uint, body string) (*models.Message, error) {
 	if err := s.ensureParticipant(userID, conversationID); err != nil {
 		return nil, err
@@ -110,7 +96,6 @@ func (s *MessageService) SendMessage(userID, conversationID uint, body string) (
 	return msg, nil
 }
 
-// GetMessages returns a thread's messages and marks the others as read.
 func (s *MessageService) GetMessages(userID, conversationID uint) ([]models.Message, error) {
 	if err := s.ensureParticipant(userID, conversationID); err != nil {
 		return nil, err
@@ -121,8 +106,6 @@ func (s *MessageService) GetMessages(userID, conversationID uint) ([]models.Mess
 	return s.conversations.ListMessages(conversationID)
 }
 
-// DeleteConversation soft-deletes a thread for the requesting participant
-// (removed from the DB only once both parties have deleted it).
 func (s *MessageService) DeleteConversation(userID, conversationID uint) error {
 	conv, err := s.conversations.FindConversation(conversationID)
 	if err != nil {
@@ -137,13 +120,10 @@ func (s *MessageService) DeleteConversation(userID, conversationID uint) error {
 	return s.conversations.SoftDelete(conv, userID)
 }
 
-// UnreadCount returns how many unread messages the user has.
 func (s *MessageService) UnreadCount(userID uint) (int64, error) {
 	return s.conversations.UnreadCount(userID)
 }
 
-// ensureParticipant returns ErrConversationNotFound or ErrNotParticipant when
-// the user is not allowed to access the conversation.
 func (s *MessageService) ensureParticipant(userID, conversationID uint) error {
 	conv, err := s.conversations.FindConversation(conversationID)
 	if err != nil {

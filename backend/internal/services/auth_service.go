@@ -1,5 +1,4 @@
-// Package services holds the business logic. It orchestrates repositories
-// and security helpers and exposes intent-revealing methods to the handlers.
+// Package services holds the business logic, orchestrating the repositories.
 package services
 
 import (
@@ -14,8 +13,6 @@ import (
 	"ymmo/internal/security"
 )
 
-// Domain errors. Handlers map these to HTTP status codes; the service
-// stays transport-agnostic.
 var (
 	ErrEmailTaken         = errors.New("email already registered")
 	ErrInvalidCredentials = errors.New("invalid email or password")
@@ -25,9 +22,6 @@ var (
 
 const tokenTTL = 24 * time.Hour
 
-// dummyHash is compared against when an email is unknown, so login takes
-// roughly the same time whether or not the user exists (mitigates user
-// enumeration via timing).
 var dummyHash, _ = bcrypt.GenerateFromPassword([]byte("ymmo-timing-guard"), bcrypt.DefaultCost)
 
 type AuthService struct {
@@ -40,8 +34,6 @@ func NewAuthService(users *repositories.UserRepository, roles *repositories.Role
 	return &AuthService{users: users, roles: roles, jwtSecret: jwtSecret}
 }
 
-// Register creates a new BUYER account. The role is forced server-side:
-// a client can never pick its own role (privilege-escalation protection).
 func (s *AuthService) Register(req dto.RegisterRequest) (*models.User, error) {
 	taken, err := s.users.ExistsByEmail(req.Email)
 	if err != nil {
@@ -83,14 +75,13 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*models.User, error) {
 	return user, nil
 }
 
-// Login verifies credentials and returns a signed JWT plus the user.
 func (s *AuthService) Login(req dto.LoginRequest) (string, *models.User, error) {
 	user, err := s.users.FindByEmail(req.Email)
 	if err != nil {
 		return "", nil, err
 	}
 	if user == nil {
-		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(req.Password)) // constant-time guard
+		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(req.Password))
 		return "", nil, ErrInvalidCredentials
 	}
 	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)) != nil {
@@ -111,7 +102,6 @@ func (s *AuthService) Login(req dto.LoginRequest) (string, *models.User, error) 
 	return token, user, nil
 }
 
-// GetUser returns the authenticated user's profile (used by /auth/me).
 func (s *AuthService) GetUser(id uint) (*models.User, error) {
 	return s.users.FindByID(id)
 }

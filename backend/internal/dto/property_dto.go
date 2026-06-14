@@ -1,18 +1,16 @@
 package dto
 
-// CreatePropertyRequest is the payload an agent sends to list a new property.
-// Every input is validated by Gin's binding tags.
 type CreatePropertyRequest struct {
 	Title       string  `json:"title" binding:"required,min=3,max=150"`
 	Description string  `json:"description" binding:"omitempty"`
 	CategoryID  uint8   `json:"category_id" binding:"required"`
 	Price       float64 `json:"price" binding:"required,gt=0"`
 	Area        float64 `json:"area" binding:"required,gt=0"`
-	Rooms       *uint8  `json:"rooms" binding:"omitempty"`
-	Bedrooms    *uint8  `json:"bedrooms" binding:"omitempty"`
-	Bathrooms   *uint8  `json:"bathrooms" binding:"omitempty"`
-	Floor       *int8   `json:"floor" binding:"omitempty"`
-	BuildYear   *uint16 `json:"build_year" binding:"omitempty"`
+	Rooms       *uint8  `json:"rooms" binding:"omitempty,gte=0,lte=100"`
+	Bedrooms    *uint8  `json:"bedrooms" binding:"omitempty,gte=0,lte=100"`
+	Bathrooms   *uint8  `json:"bathrooms" binding:"omitempty,gte=0,lte=100"`
+	Floor       *int8   `json:"floor" binding:"omitempty,gte=0,lte=120"`
+	BuildYear   *uint16 `json:"build_year" binding:"omitempty,gte=1700,lte=2100"`
 	EnergyRating string `json:"energy_rating" binding:"omitempty,oneof=A B C D E F G"`
 	GhgRating   string  `json:"ghg_rating" binding:"omitempty,oneof=A B C D E F G"`
 	Address     string  `json:"address" binding:"omitempty,max=255"`
@@ -24,8 +22,6 @@ type CreatePropertyRequest struct {
 	AgencyID    uint16  `json:"agency_id" binding:"required"`
 }
 
-// UpdatePropertyRequest is a partial update: only non-nil fields are applied.
-// Pointers let us tell "not provided" apart from "set to zero".
 type UpdatePropertyRequest struct {
 	Title       *string  `json:"title" binding:"omitempty,min=3,max=150"`
 	Description *string  `json:"description" binding:"omitempty"`
@@ -33,11 +29,11 @@ type UpdatePropertyRequest struct {
 	Status      *string  `json:"status" binding:"omitempty,oneof=DRAFT PENDING_REVIEW AVAILABLE UNDER_OFFER SOLD WITHDRAWN"`
 	Price       *float64 `json:"price" binding:"omitempty,gt=0"`
 	Area        *float64 `json:"area" binding:"omitempty,gt=0"`
-	Rooms       *uint8   `json:"rooms" binding:"omitempty"`
-	Bedrooms    *uint8   `json:"bedrooms" binding:"omitempty"`
-	Bathrooms   *uint8   `json:"bathrooms" binding:"omitempty"`
-	Floor       *int8    `json:"floor" binding:"omitempty"`
-	BuildYear   *uint16  `json:"build_year" binding:"omitempty"`
+	Rooms       *uint8   `json:"rooms" binding:"omitempty,gte=0,lte=100"`
+	Bedrooms    *uint8   `json:"bedrooms" binding:"omitempty,gte=0,lte=100"`
+	Bathrooms   *uint8   `json:"bathrooms" binding:"omitempty,gte=0,lte=100"`
+	Floor       *int8    `json:"floor" binding:"omitempty,gte=0,lte=120"`
+	BuildYear   *uint16  `json:"build_year" binding:"omitempty,gte=1700,lte=2100"`
 	EnergyRating *string `json:"energy_rating" binding:"omitempty,oneof=A B C D E F G"`
 	GhgRating   *string  `json:"ghg_rating" binding:"omitempty,oneof=A B C D E F G"`
 	Address     *string  `json:"address" binding:"omitempty,max=255"`
@@ -46,8 +42,6 @@ type UpdatePropertyRequest struct {
 	IsExclusive *bool    `json:"is_exclusive" binding:"omitempty"`
 }
 
-// ToUpdates turns the request into a GORM updates map containing only the
-// fields the client actually sent (DRY: GORM applies just those columns).
 func (r UpdatePropertyRequest) ToUpdates() map[string]interface{} {
 	updates := map[string]interface{}{}
 	if r.Title != nil {
@@ -104,24 +98,21 @@ func (r UpdatePropertyRequest) ToUpdates() map[string]interface{} {
 	return updates
 }
 
-// PropertySearchQuery holds the public search filters (bound from the query
-// string, e.g. /properties?city=Paris&min_price=100000&page=2).
 type PropertySearchQuery struct {
 	City       string  `form:"city"`
 	CategoryID uint8   `form:"category_id"`
-	Sector     string  `form:"sector"` // RESIDENTIAL | COMMERCIAL
+	Sector     string  `form:"sector"`
 	MinPrice   float64 `form:"min_price"`
 	MaxPrice   float64 `form:"max_price"`
 	MinArea    float64 `form:"min_area"`
 	MaxArea    float64 `form:"max_area"`
-	MaxEnergy  string  `form:"max_energy"` // A..G (returns this rating or better)
+	MaxEnergy  string  `form:"max_energy"`
 	Status     string  `form:"status"`
 	Page       int     `form:"page"`
 	PageSize   int     `form:"page_size"`
-	Sort       string  `form:"sort"` // price_asc | price_desc | recent
+	Sort       string  `form:"sort"`
 }
 
-// Pagination is the metadata returned alongside a list of results.
 type Pagination struct {
 	Page       int   `json:"page"`
 	PageSize   int   `json:"page_size"`

@@ -10,14 +10,11 @@ import (
 	"ymmo/internal/security"
 )
 
-// Context keys used to share the authenticated identity with handlers.
 const (
 	ctxUserID = "currentUserID"
 	ctxRole   = "currentRole"
 )
 
-// Auth validates the Bearer JWT and stores the identity in the context.
-// Any request without a valid token is rejected with 401.
 func Auth(jwtSecret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		header := c.GetHeader("Authorization")
@@ -39,8 +36,20 @@ func Auth(jwtSecret string) gin.HandlerFunc {
 	}
 }
 
-// RequireRole guards a route so only the given roles may proceed.
-// Used later by internal endpoints (agent, director, HQ...).
+func OptionalAuth(jwtSecret string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		header := c.GetHeader("Authorization")
+		if header != "" && strings.HasPrefix(header, "Bearer ") {
+			tokenString := strings.TrimPrefix(header, "Bearer ")
+			if claims, err := security.ParseToken(jwtSecret, tokenString); err == nil {
+				c.Set(ctxUserID, claims.UserID)
+				c.Set(ctxRole, claims.Role)
+			}
+		}
+		c.Next()
+	}
+}
+
 func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		current := CurrentRole(c)
@@ -54,7 +63,6 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 	}
 }
 
-// CurrentUserID returns the authenticated user's ID (0 if none).
 func CurrentUserID(c *gin.Context) uint {
 	if v, ok := c.Get(ctxUserID); ok {
 		if id, ok := v.(uint); ok {
@@ -64,7 +72,6 @@ func CurrentUserID(c *gin.Context) uint {
 	return 0
 }
 
-// CurrentRole returns the authenticated user's role code ("" if none).
 func CurrentRole(c *gin.Context) string {
 	if v, ok := c.Get(ctxRole); ok {
 		if s, ok := v.(string); ok {

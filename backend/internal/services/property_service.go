@@ -9,17 +9,21 @@ import (
 	"ymmo/internal/repositories"
 )
 
-var ErrPropertyNotFound = errors.New("property not found")
+var (
+	ErrPropertyNotFound  = errors.New("property not found")
+	ErrNotPendingReview  = errors.New("property is not awaiting review")
+	ErrPropertyNotPublic = errors.New("property is not publicly available")
+)
 
 type PropertyService struct {
 	properties *repositories.PropertyRepository
+	users      *repositories.UserRepository
 }
 
-func NewPropertyService(properties *repositories.PropertyRepository) *PropertyService {
-	return &PropertyService{properties: properties}
+func NewPropertyService(properties *repositories.PropertyRepository, users *repositories.UserRepository) *PropertyService {
+	return &PropertyService{properties: properties, users: users}
 }
 
-// Search returns a page of properties plus its pagination metadata.
 func (s *PropertyService) Search(q dto.PropertySearchQuery) ([]models.Property, dto.Pagination, error) {
 	items, total, err := s.properties.Search(q)
 	if err != nil {
@@ -47,7 +51,24 @@ func (s *PropertyService) Search(q dto.PropertySearchQuery) ([]models.Property, 
 	return items, meta, nil
 }
 
-// Get returns a property and records a view (popularity tracking).
+func (s *PropertyService) ListMine(agentID uint) ([]models.Property, error) {
+	return s.properties.ListByAgent(agentID)
+}
+
+func (s *PropertyService) ListManaged(userID uint, role string) ([]models.Property, error) {
+	if role == "HQ" {
+		return s.properties.ListAll()
+	}
+	user, err := s.users.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil || user.AgencyID == nil {
+		return []models.Property{}, nil
+	}
+	return s.properties.ListByAgency(*user.AgencyID)
+}
+
 func (s *PropertyService) Get(id uint) (*models.Property, error) {
 	property, err := s.properties.FindByID(id)
 	if err != nil {
@@ -56,18 +77,14 @@ func (s *PropertyService) Get(id uint) (*models.Property, error) {
 	if property == nil {
 		return nil, ErrPropertyNotFound
 	}
-	// Best-effort: a failed counter update must not break the read.
 	_ = s.properties.IncrementViewCount(id)
 	return property, nil
 }
 
-// Create lists a new property. It starts as a DRAFT: nothing is public until
-// it is reviewed/published (workflow handled in a later module).
-func (s *PropertyService) Create(req dto.CreatePropertyRequest, agentID uint) (*models.Property, error) {
+func (s *PropertyService) Create(req dto.CreatePropertyRequest, creatorID uint, creatorRole string) (*models.Property, error) {
 	property := &models.Property{
 		Title:       req.Title,
 		CategoryID:  req.CategoryID,
-		Status:      models.PropertyStatusDraft,
 		Price:       req.Price,
 		Area:        req.Area,
 		Rooms:       req.Rooms,
@@ -81,8 +98,17 @@ func (s *PropertyService) Create(req dto.CreatePropertyRequest, agentID uint) (*
 		Longitude:   req.Longitude,
 		IsExclusive: req.IsExclusive,
 		AgencyID:    req.AgencyID,
-		AgentID:     &agentID,
 	}
+
+	if creatorRole == "SELLER" {
+		property.Status = models.PropertyStatusPendingReview
+		property.AgentID = nil
+	} else {
+		property.Status = models.PropertyStatusDraft
+		id := creatorID
+		property.AgentID = &id
+	}
+
 	if req.Description != "" {
 		property.Description = &req.Description
 	}
@@ -102,7 +128,41 @@ func (s *PropertyService) Create(req dto.CreatePropertyRequest, agentID uint) (*
 	return property, nil
 }
 
-// Update applies a partial change after checking the property exists.
+func (s *PropertyService) ListPending(userID uint, role string) ([]models.Property, error) {
+	if role == "HQ" {
+		return s.properties.ListPending(nil)
+	}
+	user, err := s.users.FindByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil || user.AgencyID == nil {
+		return []models.Property{}, nil
+	}
+	return s.properties.ListPending(user.AgencyID)
+}
+
+func (s *PropertyService) Validate(propertyID, agentID uint) (*models.Property, error) {
+	existing, err := s.properties.FindByID(propertyID)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, ErrPropertyNotFound
+	}
+	if existing.Status != models.PropertyStatusPendingReview {
+		return nil, ErrNotPendingReview
+	}
+	updates := map[string]interface{}{
+		"status":   models.PropertyStatusAvailable,
+		"agent_id": agentID,
+	}
+	if err := s.properties.Update(propertyID, updates); err != nil {
+		return nil, err
+	}
+	return s.properties.FindByID(propertyID)
+}
+
 func (s *PropertyService) Update(id uint, req dto.UpdatePropertyRequest) (*models.Property, error) {
 	existing, err := s.properties.FindByID(id)
 	if err != nil {
@@ -121,7 +181,6 @@ func (s *PropertyService) Update(id uint, req dto.UpdatePropertyRequest) (*model
 	return s.properties.FindByID(id)
 }
 
-// Delete removes a property after checking it exists.
 func (s *PropertyService) Delete(id uint) error {
 	existing, err := s.properties.FindByID(id)
 	if err != nil {

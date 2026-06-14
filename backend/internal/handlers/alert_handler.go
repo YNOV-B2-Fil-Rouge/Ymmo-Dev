@@ -19,7 +19,6 @@ func NewAlertHandler(svc *services.AlertService) *AlertHandler {
 	return &AlertHandler{svc: svc}
 }
 
-// Create saves a search alert for the current user.
 // @Summary      Create a search alert
 // @Tags         alerts
 // @Accept       json
@@ -53,7 +52,6 @@ func (h *AlertHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, alert)
 }
 
-// List returns the current user's alerts.
 // @Summary      List my search alerts
 // @Tags         alerts
 // @Produce      json
@@ -71,7 +69,6 @@ func (h *AlertHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// Delete removes one of the current user's alerts.
 // @Summary      Delete a search alert
 // @Tags         alerts
 // @Produce      json

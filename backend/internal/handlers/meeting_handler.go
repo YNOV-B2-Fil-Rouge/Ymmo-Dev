@@ -19,7 +19,6 @@ func NewMeetingHandler(svc *services.MeetingService) *MeetingHandler {
 	return &MeetingHandler{svc: svc}
 }
 
-// Create schedules an internal meeting (staff only).
 // @Summary      Create a meeting
 // @Tags         meetings
 // @Accept       json
@@ -54,7 +53,6 @@ func (h *MeetingHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, meeting)
 }
 
-// List returns the current user's meetings.
 // @Summary      List my meetings
 // @Tags         meetings
 // @Produce      json
@@ -72,7 +70,6 @@ func (h *MeetingHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// Delete cancels a meeting (organizer only).
 // @Summary      Delete a meeting
 // @Tags         meetings
 // @Produce      json

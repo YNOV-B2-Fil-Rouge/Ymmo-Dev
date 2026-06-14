@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ymmo - Recherche</title>
+  <link rel="icon" type="image/png" href="./img/logo.png" />
+  <meta name="description" content="Recherchez un bien immobilier par type, budget, localisation et performance énergétique." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/tailwind-config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
+  <a href="#results" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller aux résultats</a>
+
+  <header class="bg-alyssum border-b-2 border-hibiscus">
+    <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between" aria-label="Navigation principale">
+      <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
+        <img src="./img/logo-title.png" alt="Ymmo" class="h-12 w-auto" />
+      </a>
+      <div id="nav-account" class="flex items-center gap-4"></div>
+    </nav>
+  </header>
+
+  <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
+    <div class="grid md:grid-cols-[260px_1fr] gap-8">
+
+      <aside class="md:border-r border-hibiscus/30 md:pr-6">
+        <h1 class="text-2xl font-bold mb-1">Filtre de recherche</h1>
+        <hr class="border-hibiscus/30 mb-5" />
+
+        <div class="mb-6">
+          <p class="font-semibold mb-2">Type de bien :</p>
+          <div class="flex flex-wrap gap-2">
+            <button data-type="residential" class="type-btn text-xs font-semibold px-3 py-1.5 rounded-md border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white transition-colors">Résidentiel</button>
+            <button data-type="office" class="type-btn text-xs font-semibold px-3 py-1.5 rounded-md border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white transition-colors">Bureau</button>
+            <button data-type="land" class="type-btn text-xs font-semibold px-3 py-1.5 rounded-md border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white transition-colors">Terrain</button>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <p class="font-semibold mb-2">Budget :</p>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="text-xs text-slate2">Minimum
+              <span class="flex items-center gap-1 mt-1">
+                <input id="min-price" type="number" min="0" class="w-full rounded-md border border-hibiscus/60 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" /><span>€</span>
+              </span>
+            </label>
+            <label class="text-xs text-slate2">Maximum
+              <span class="flex items-center gap-1 mt-1">
+                <input id="max-price" type="number" min="0" class="w-full rounded-md border border-hibiscus/60 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" /><span>€</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <p class="font-semibold mb-2">Surface :</p>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="text-xs text-slate2">Minimum
+              <span class="flex items-center gap-1 mt-1">
+                <input id="min-area" type="number" min="0" class="w-full rounded-md border border-hibiscus/60 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" /><span>m²</span>
+              </span>
+            </label>
+            <label class="text-xs text-slate2">Maximum
+              <span class="flex items-center gap-1 mt-1">
+                <input id="max-area" type="number" min="0" class="w-full rounded-md border border-hibiscus/60 bg-white px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" /><span>m²</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <label for="city" class="block font-semibold mb-2">Localisation :</label>
+          <input id="city" type="search" placeholder="Paris, Lyon, Aix-en-Provence…"
+            class="w-full rounded-md border border-hibiscus/60 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" />
+        </div>
+
+        <div class="mb-2">
+          <p class="font-semibold mb-2">Performance énergétique :</p>
+          <div id="energy" class="flex flex-wrap gap-2">
+            <button data-energy="A" class="energy-btn w-8 h-8 rounded-md border border-hibiscus text-hibiscus font-semibold hover:bg-hibiscus hover:text-white transition-colors">A</button>
+            <button data-energy="B" class="energy-btn w-8 h-8 rounded-md border border-hibiscus text-hibiscus font-semibold hover:bg-hibiscus hover:text-white transition-colors">B</button>
+            <button data-energy="C" class="energy-btn w-8 h-8 rounded-md border border-hibiscus text-hibiscus font-semibold hover:bg-hibiscus hover:text-white transition-colors">C</button>
+            <button data-energy="D" class="energy-btn w-8 h-8 rounded-md border border-hibiscus text-hibiscus font-semibold hover:bg-hibiscus hover:text-white transition-colors">D</button>
+            <button data-energy="E" class="energy-btn w-8 h-8 rounded-md border border-hibiscus text-hibiscus font-semibold hover:bg-hibiscus hover:text-white transition-colors">E</button>
+            <button data-energy="F" class="energy-btn w-8 h-8 rounded-md border border-hibiscus text-hibiscus font-semibold hover:bg-hibiscus hover:text-white transition-colors">F</button>
+            <button data-energy="G" class="energy-btn w-8 h-8 rounded-md border border-hibiscus text-hibiscus font-semibold hover:bg-hibiscus hover:text-white transition-colors">G</button>
+          </div>
+        </div>
+
+        <div class="mt-6 pt-5 border-t border-hibiscus/30">
+          <button id="create-alert" class="w-full bg-hibiscus hover:bg-hibiscus/90 text-white text-sm font-medium py-2.5 rounded-md transition-colors">
+            🔔 Créer une alerte avec ces critères
+          </button>
+          <p id="alert-msg" class="hidden text-sm text-center"></p>
+          <p class="text-xs text-slate2 mt-2">Soyez notifié des nouveaux biens correspondants. Gérez vos alertes depuis votre profil.</p>
+        </div>
+      </aside>
+
+      <section id="results" aria-label="Résultats de recherche">
+        <p id="results-count" class="sr-only" role="status" aria-live="polite"></p>
+        <div id="results-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6"></div>
+        <p id="results-empty" class="hidden text-slate2 py-10 text-center">Aucun bien ne correspond à vos critères.</p>
+      </section>
+    </div>
+  </main>
+
+  <footer class="bg-midnight text-white/70">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-center text-sm">Ymmo — Immobilier © <span id="year"></span></div>
+  </footer>
+
+  <script type="module" src="./js/search.js"></script>
+</body>
+</html>

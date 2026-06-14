@@ -19,7 +19,6 @@ func NewSaleHandler(svc *services.SaleService) *SaleHandler {
 	return &SaleHandler{svc: svc}
 }
 
-// Create opens a sale file (staff only).
 // @Summary      Open a sale file
 // @Tags         sales
 // @Accept       json
@@ -59,7 +58,6 @@ func (h *SaleHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, sale)
 }
 
-// List returns the current user's sale files.
 // @Summary      List my sale files
 // @Tags         sales
 // @Produce      json
@@ -77,7 +75,6 @@ func (h *SaleHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// Get returns one sale file (participant only).
 // @Summary      Get a sale file
 // @Tags         sales
 // @Produce      json
@@ -103,7 +100,6 @@ func (h *SaleHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, sale)
 }
 
-// Update advances a sale file (the sale's agent only).
 // @Summary      Update a sale file
 // @Tags         sales
 // @Accept       json
@@ -138,7 +134,6 @@ func (h *SaleHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, sale)
 }
 
-// writeAccessError maps sale errors to HTTP status codes.
 func (h *SaleHandler) writeAccessError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, services.ErrSaleNotFound):

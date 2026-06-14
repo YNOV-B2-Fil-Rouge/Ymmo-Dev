@@ -139,6 +139,8 @@ CREATE TABLE properties (
   CONSTRAINT fk_properties_approver FOREIGN KEY (approved_by) REFERENCES users(id),
   CONSTRAINT chk_properties_price   CHECK (price >= 0),
   CONSTRAINT chk_properties_area    CHECK (area > 0),
+  CONSTRAINT chk_properties_floor   CHECK (floor IS NULL OR floor >= 0),
+  CONSTRAINT chk_properties_year    CHECK (build_year IS NULL OR build_year BETWEEN 1700 AND 2100),
   -- Indexes designed for the search engine (price/city/area/energy filters)
   INDEX idx_properties_status (status),
   INDEX idx_properties_city (city),
@@ -313,40 +315,23 @@ CREATE TABLE price_history (
   UNIQUE KEY uq_history (city, category_id, period)
 ) ENGINE=InnoDB;
 
--- =====================================================================
---  MINIMAL REFERENCE DATA (SEED)
--- =====================================================================
-INSERT INTO departments (name, description) VALUES
-  ('Management',     'Strategic steering'),
-  ('Sales',          'Property buying and selling'),
-  ('Comm. & Mktg',   'Communication and marketing'),
-  ('Admin/HR',       'Administration and human resources'),
-  ('IT & Support',   'Technical maintenance and administration');
+-- ---------------------------------------------------------------------
+-- 13. SELLER APPLICATIONS
+--     A buyer applies to become a seller; an agent reviews & approves.
+--     Approval promotes the user's role from BUYER to SELLER.
+-- ---------------------------------------------------------------------
+CREATE TABLE seller_applications (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT UNSIGNED NOT NULL,
+  status      ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+  motivation  VARCHAR(500) NULL,
+  reviewed_by INT UNSIGNED NULL,                 -- agent who reviewed it
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at TIMESTAMP NULL,
+  CONSTRAINT fk_sa_user     FOREIGN KEY (user_id)     REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_sa_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_sa_status (status),
+  INDEX idx_sa_user (user_id)
+) ENGINE=InnoDB;
 
-INSERT INTO roles (code, label, is_internal) VALUES
-  ('VISITOR',  'Unauthenticated visitor', FALSE),
-  ('BUYER',    'Buyer client',            FALSE),
-  ('SELLER',   'Seller client',           FALSE),
-  ('AGENT',    'Sales agent',             TRUE),
-  ('DIRECTOR', 'Agency director',         TRUE),
-  ('HQ',       'Head-office staff',       TRUE),
-  ('IT',       'IT and Support',          TRUE);
 
-INSERT INTO property_categories (sector, label) VALUES
-  ('RESIDENTIAL','House'),
-  ('RESIDENTIAL','Apartment'),
-  ('RESIDENTIAL','Studio'),
-  ('RESIDENTIAL','Land'),
-  ('COMMERCIAL','Office'),
-  ('COMMERCIAL','Retail space'),
-  ('COMMERCIAL','Warehouse');
-
--- Access matrix (exact translation of the brief's table)
--- Rows = requester department, value = level on target department.
--- 1=Management 2=Sales 3=Comm&Mktg 4=Admin/HR 5=IT
-INSERT INTO department_permissions (requester_department_id, target_department_id, access_level) VALUES
-  (1,1,'READ_WRITE'),(1,2,'READ'),(1,3,'READ'),(1,4,'READ'),(1,5,'READ'),
-  (2,1,'NONE'),(2,2,'READ_WRITE'),(2,3,'READ'),(2,4,'NONE'),(2,5,'NONE'),
-  (3,1,'NONE'),(3,2,'READ'),(3,3,'READ_WRITE'),(3,4,'NONE'),(3,5,'NONE'),
-  (4,1,'NONE'),(4,2,'READ'),(4,3,'READ'),(4,4,'READ_WRITE'),(4,5,'NONE'),
-  (5,1,'NONE'),(5,2,'READ'),(5,3,'READ'),(5,4,'NONE'),(5,5,'READ_WRITE');

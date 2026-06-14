@@ -2,17 +2,14 @@ package models
 
 import "time"
 
-// Sale file status values (must match the ENUM in db/schema.sql).
 const (
 	SaleStatusOffer               = "OFFER"
-	SaleStatusPreliminaryContract = "PRELIMINARY_CONTRACT" // "compromis"
-	SaleStatusDeed                = "DEED"                  // "acte authentique"
+	SaleStatusPreliminaryContract = "PRELIMINARY_CONTRACT"
+	SaleStatusDeed                = "DEED"
 	SaleStatusCompleted           = "COMPLETED"
 	SaleStatusCancelled           = "CANCELLED"
 )
 
-// SaleFile maps the `sale_files` table: the lifecycle of a transaction
-// between a buyer and an agent for a property.
 type SaleFile struct {
 	ID              uint       `gorm:"primaryKey;column:id" json:"id"`
 	PropertyID      uint       `gorm:"column:property_id" json:"property_id"`

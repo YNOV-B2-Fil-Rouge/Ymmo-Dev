@@ -18,7 +18,6 @@ func NewFavoriteHandler(svc *services.FavoriteService) *FavoriteHandler {
 	return &FavoriteHandler{svc: svc}
 }
 
-// Add favorites a property for the current user.
 // @Summary      Add a property to favorites
 // @Tags         favorites
 // @Produce      json
@@ -27,6 +26,7 @@ func NewFavoriteHandler(svc *services.FavoriteService) *FavoriteHandler {
 // @Success      204  "No Content"
 // @Failure      401  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
+// @Failure      409  {object}  map[string]string
 // @Router       /properties/{id}/favorites [post]
 func (h *FavoriteHandler) Add(c *gin.Context) {
 	id, ok := parseID(c)
@@ -39,13 +39,16 @@ func (h *FavoriteHandler) Add(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
 			return
 		}
+		if errors.Is(err, services.ErrPropertyNotPublic) {
+			c.JSON(http.StatusConflict, gin.H{"error": "property is not available"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not add favorite"})
 		return
 	}
 	c.Status(http.StatusNoContent)
 }
 
-// Remove un-favorites a property for the current user.
 // @Summary      Remove a property from favorites
 // @Tags         favorites
 // @Produce      json
@@ -67,7 +70,6 @@ func (h *FavoriteHandler) Remove(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// List returns the current user's favorited properties.
 // @Summary      List my favorite properties
 // @Tags         favorites
 // @Produce      json
