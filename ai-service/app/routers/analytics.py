@@ -1,15 +1,10 @@
-"""Market analytics endpoints, powered by pandas.
-
-The SQL only pulls raw rows; every aggregation/derivation is done in pandas to
-showcase the Python data workflow required by the brief.
-"""
+"""Market analytics endpoints (aggregations done in pandas)."""
 from fastapi import APIRouter, Query
 
 from ..database import query_df
 
 router = APIRouter(tags=["analytics"])
 
-# Property statuses that represent "real" market data (exclude drafts).
 MARKET_STATUSES = ("AVAILABLE", "UNDER_OFFER", "SOLD")
 
 
@@ -36,7 +31,6 @@ def price_trends(city: str | None = Query(default=None, description="Filter on a
         if df.empty:
             return {"data": []}
 
-    # Core computation: price per square meter.
     df["price_per_m2"] = df["price"] / df["area"]
 
     grouped = (
@@ -108,7 +102,6 @@ def strategic_zones():
     )
     agg["views_per_listing"] = (agg["total_views"] / agg["listings"]).round(1)
 
-    # High demand + low price -> high opportunity.
     agg["opportunity_score"] = (
         0.6 * _normalize(agg["views_per_listing"])
         + 0.4 * (1 - _normalize(agg["avg_price_per_m2"]))

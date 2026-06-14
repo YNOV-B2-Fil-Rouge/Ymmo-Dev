@@ -2,8 +2,6 @@ package models
 
 import "time"
 
-// Alert maps the `alerts` table: a user's saved search criteria. Every
-// criterion is optional (a NULL means "no filter on this field").
 type Alert struct {
 	ID         uint      `gorm:"primaryKey;column:id" json:"id"`
 	UserID     uint      `gorm:"column:user_id" json:"user_id"`

@@ -15,7 +15,6 @@
 <body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
   <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au contenu</a>
 
-  <!-- ===== Header ===== -->
   <header class="bg-alyssum border-b-2 border-hibiscus">
     <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between" aria-label="Navigation principale">
       <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
@@ -30,7 +29,6 @@
       </a>
 
       <div id="nav-account" class="flex items-center gap-4">
-        <!-- Visitor state (swapped by js/home.js when logged in) -->
         <a href="./auth.html" class="text-sm font-medium text-midnight hover:text-hibiscus transition-colors">Connexion</a>
         <a href="./auth.html#register" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Inscription</a>
       </div>
@@ -38,7 +36,6 @@
   </header>
 
   <main id="main" class="flex-1">
-    <!-- ===== Hero + search ===== -->
     <section class="relative">
       <div class="h-64 sm:h-80 bg-midnight bg-cover bg-center"
            style="background-image:url('https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1600&q=80')"
@@ -56,19 +53,16 @@
       </div>
     </section>
 
-    <!-- ===== Catalogue ===== -->
     <section class="max-w-6xl mx-auto px-4 pt-16 pb-16" aria-labelledby="catalogue-title">
       <h1 id="catalogue-title" class="sr-only">Catalogue des biens</h1>
 
       <div id="catalogue" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <!-- Cards injected by js/home.js -->
       </div>
 
       <p id="empty" class="hidden text-center text-slate2 py-10">Aucun bien ne correspond à votre recherche.</p>
     </section>
   </main>
 
-  <!-- ===== Footer ===== -->
   <footer class="bg-midnight text-white/70">
     <div class="max-w-6xl mx-auto px-4 py-6 text-center text-sm">
       Ymmo — Immobilier © <span id="year"></span>

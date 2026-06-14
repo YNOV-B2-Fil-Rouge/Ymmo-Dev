@@ -17,7 +17,6 @@ func NewUserHandler(svc *services.UserService) *UserHandler {
 	return &UserHandler{svc: svc}
 }
 
-// ListAll returns every user (IT user management).
 // @Summary      List all users (IT)
 // @Tags         users
 // @Produce      json
@@ -35,7 +34,6 @@ func (h *UserHandler) ListAll(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// ListCollaborators returns the internal staff directory (director/HQ only).
 // @Summary      List collaborators
 // @Tags         users
 // @Produce      json

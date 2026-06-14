@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// Message maps the `messages` table: one message inside a conversation.
 type Message struct {
 	ID             uint      `gorm:"primaryKey;column:id" json:"id"`
 	ConversationID uint      `gorm:"column:conversation_id" json:"conversation_id"`

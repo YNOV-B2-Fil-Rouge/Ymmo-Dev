@@ -99,8 +99,7 @@
         <span class="text-sm">Bien en exclusivité YMMO</span>
       </label>
 
-      <!-- Photos chosen at creation time: staged here, uploaded right after the
-           property is created (a photo needs an existing property id). -->
+      <!-- Staged here, uploaded right after the property is created. -->
       <div id="create-photos">
         <label for="create-photo-files" class="block text-hibiscus font-semibold text-sm mb-1">Photos (optionnel)</label>
         <input id="create-photo-files" type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif"
@@ -110,51 +109,4 @@
 
       <p id="form-error" class="hidden text-sm text-hibiscus bg-hibiscus/10 border border-hibiscus/30 rounded-md px-3 py-2" role="alert"></p>
 
-      <div class="flex items-center gap-3 pt-2">
-        <button type="submit" id="submit-btn" class="bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-8 py-2.5 rounded-lg transition-colors">Publier</button>
-        <button type="button" id="delete-btn" class="hidden border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white font-medium px-6 py-2.5 rounded-lg transition-colors">Supprimer</button>
-      </div>
-    </form>
-
-    <!-- Photos (edit mode only: a photo attaches to an existing property) -->
-    <section id="photos-section" class="hidden mt-10 border-t border-hibiscus/30 pt-6">
-      <h2 class="text-xl font-bold mb-4">Photos du bien</h2>
-      <div id="photos-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4"></div>
-      <p id="photos-empty" class="hidden text-slate2 mb-4">Aucune photo pour ce bien.</p>
-
-      <!-- Upload from the user's computer -->
-      <div class="flex flex-col sm:flex-row gap-3 sm:items-end mb-4">
-        <div class="flex-1">
-          <label for="photo-file" class="block text-hibiscus font-semibold text-sm mb-1">Depuis votre ordinateur</label>
-          <input id="photo-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"
-                 class="block w-full text-sm text-slate2 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-hibiscus file:text-white file:cursor-pointer hover:file:bg-hibiscus/90" />
-        </div>
-        <label class="flex items-center gap-2 text-sm whitespace-nowrap">
-          <input id="photo-file-primary" type="checkbox" class="w-4 h-4 accent-hibiscus" /> Photo principale
-        </label>
-        <button type="button" id="photo-upload" class="bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-5 py-2.5 rounded-lg transition-colors">Téléverser</button>
-      </div>
-
-      <!-- Or attach by URL (used by the seed; handy for external images) -->
-      <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
-        <div class="flex-1">
-          <label for="photo-url" class="block text-hibiscus font-semibold text-sm mb-1">…ou par URL</label>
-          <input id="photo-url" type="url" placeholder="https://…" class="ym-input" />
-        </div>
-        <label class="flex items-center gap-2 text-sm whitespace-nowrap">
-          <input id="photo-primary" type="checkbox" class="w-4 h-4 accent-hibiscus" /> Photo principale
-        </label>
-        <button type="button" id="photo-add" class="bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-5 py-2.5 rounded-lg transition-colors">Ajouter</button>
-      </div>
-      <p id="photo-error" class="hidden text-sm text-hibiscus mt-2" role="alert"></p>
-    </section>
-  </main>
-
-  <style>
-    .ym-input { width:100%; border-radius:0.375rem; border:1px solid rgba(182,55,83,.6); background:#fff; padding:0.5rem 0.75rem; font-size:0.875rem; }
-    .ym-input:focus { outline:none; border-color:#b63753; box-shadow:0 0 0 2px rgba(182,55,83,.25); }
-  </style>
-
-  <script type="module" src="./js/property-form.js"></script>
-</body>
-</html>
+      <div class="flex items-center gap-3 pt-

@@ -18,13 +18,10 @@ func NewMeetingRepository(db *gorm.DB) *MeetingRepository {
 	return &MeetingRepository{db: db}
 }
 
-// Create inserts a meeting. Participants are added separately, so we omit the
-// association here (avoids GORM trying to upsert user rows).
 func (r *MeetingRepository) Create(m *models.Meeting) error {
 	return r.db.Omit("Participants").Create(m).Error
 }
 
-// AddParticipants links existing users to a meeting (duplicates ignored).
 func (r *MeetingRepository) AddParticipants(meetingID uint, userIDs []uint) error {
 	if len(userIDs) == 0 {
 		return nil
@@ -36,8 +33,6 @@ func (r *MeetingRepository) AddParticipants(meetingID uint, userIDs []uint) erro
 	return r.db.Clauses(clause.OnConflict{DoNothing: true}).Create(&rows).Error
 }
 
-// ExistsAtTime reports whether the organizer already has a meeting starting at
-// the exact same time (duplicate-meeting guard).
 func (r *MeetingRepository) ExistsAtTime(organizerID uint, startAt time.Time) (bool, error) {
 	var count int64
 	err := r.db.Model(&models.Meeting{}).
@@ -46,7 +41,6 @@ func (r *MeetingRepository) ExistsAtTime(organizerID uint, startAt time.Time) (b
 	return count > 0, err
 }
 
-// FindByID returns a meeting with its participants, or nil.
 func (r *MeetingRepository) FindByID(id uint) (*models.Meeting, error) {
 	var m models.Meeting
 	err := r.db.Preload("Participants").First(&m, id).Error
@@ -59,7 +53,6 @@ func (r *MeetingRepository) FindByID(id uint) (*models.Meeting, error) {
 	return &m, nil
 }
 
-// ListForUser returns meetings the user organizes or attends, soonest first.
 func (r *MeetingRepository) ListForUser(userID uint) ([]models.Meeting, error) {
 	attended := r.db.Table("meeting_participants").
 		Select("meeting_id").Where("user_id = ?", userID)
@@ -74,7 +67,6 @@ func (r *MeetingRepository) ListForUser(userID uint) ([]models.Meeting, error) {
 	return meetings, err
 }
 
-// Delete removes a meeting (participants cascade via the FK).
 func (r *MeetingRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Meeting{}, id).Error
 }

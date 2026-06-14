@@ -19,7 +19,6 @@ func NewMessageHandler(svc *services.MessageService) *MessageHandler {
 	return &MessageHandler{svc: svc}
 }
 
-// StartConversation opens (or reuses) a thread with an agent.
 // @Summary      Start a conversation with an agent
 // @Tags         messaging
 // @Accept       json
@@ -55,7 +54,6 @@ func (h *MessageHandler) StartConversation(c *gin.Context) {
 	c.JSON(http.StatusCreated, conv)
 }
 
-// ListConversations returns the current user's threads.
 // @Summary      List my conversations
 // @Tags         messaging
 // @Produce      json
@@ -73,7 +71,6 @@ func (h *MessageHandler) ListConversations(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// SendMessage posts a message in a conversation.
 // @Summary      Send a message
 // @Tags         messaging
 // @Accept       json
@@ -108,7 +105,6 @@ func (h *MessageHandler) SendMessage(c *gin.Context) {
 	c.JSON(http.StatusCreated, msg)
 }
 
-// GetMessages returns a conversation's messages (and marks them read).
 // @Summary      Get conversation messages
 // @Tags         messaging
 // @Produce      json
@@ -134,7 +130,6 @@ func (h *MessageHandler) GetMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": messages})
 }
 
-// Delete removes a conversation for the current user (participant only).
 // @Summary      Delete a conversation
 // @Tags         messaging
 // @Produce      json
@@ -158,7 +153,6 @@ func (h *MessageHandler) Delete(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// UnreadCount returns the user's number of unread messages.
 // @Summary      Count my unread messages
 // @Tags         messaging
 // @Produce      json
@@ -166,24 +160,4 @@ func (h *MessageHandler) Delete(c *gin.Context) {
 // @Success      200  {object}  map[string]int
 // @Failure      401  {object}  map[string]string
 // @Router       /messages/unread-count [get]
-func (h *MessageHandler) UnreadCount(c *gin.Context) {
-	userID := middleware.CurrentUserID(c)
-	count, err := h.svc.UnreadCount(userID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not count unread messages"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"unread": count})
-}
-
-// writeAccessError maps the messaging access errors to HTTP status codes.
-func (h *MessageHandler) writeAccessError(c *gin.Context, err error, fallback string) {
-	switch {
-	case errors.Is(err, services.ErrConversationNotFound):
-		c.JSON(http.StatusNotFound, gin.H{"error": "conversation not found"})
-	case errors.Is(err, services.ErrNotParticipant):
-		c.JSON(http.StatusForbidden, gin.H{"error": "you are not a participant of this conversation"})
-	default:
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fallback})
-	}
-}
+func (h *MessageHandler) UnreadCount(c *gin.Context

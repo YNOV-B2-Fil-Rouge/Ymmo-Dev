@@ -16,12 +16,10 @@ func NewConversationRepository(db *gorm.DB) *ConversationRepository {
 	return &ConversationRepository{db: db}
 }
 
-// CreateConversation inserts a new conversation.
 func (r *ConversationRepository) CreateConversation(c *models.Conversation) error {
 	return r.db.Create(c).Error
 }
 
-// FindConversation returns a conversation by id, or nil.
 func (r *ConversationRepository) FindConversation(id uint) (*models.Conversation, error) {
 	var c models.Conversation
 	err := r.db.First(&c, id).Error
@@ -34,8 +32,6 @@ func (r *ConversationRepository) FindConversation(id uint) (*models.Conversation
 	return &c, nil
 }
 
-// FindExisting looks for an existing thread between the same client, agent and
-// property, so we reuse it instead of creating duplicates.
 func (r *ConversationRepository) FindExisting(clientID, agentID uint, propertyID *uint) (*models.Conversation, error) {
 	q := r.db.Where("client_id = ? AND agent_id = ?", clientID, agentID)
 	if propertyID != nil {
@@ -55,8 +51,6 @@ func (r *ConversationRepository) FindExisting(clientID, agentID uint, propertyID
 	return &c, nil
 }
 
-// ListForUser returns the conversations the user takes part in and has NOT
-// soft-deleted, newest first.
 func (r *ConversationRepository) ListForUser(userID uint) ([]models.Conversation, error) {
 	var conversations []models.Conversation
 	err := r.db.
@@ -70,8 +64,6 @@ func (r *ConversationRepository) ListForUser(userID uint) ([]models.Conversation
 	return conversations, err
 }
 
-// SoftDelete marks the conversation as deleted for the requesting participant.
-// When BOTH participants have deleted it, the row (and its messages) is removed.
 func (r *ConversationRepository) SoftDelete(conv *models.Conversation, userID uint) error {
 	if conv.ClientID == userID {
 		conv.ClientDeleted = true
@@ -88,12 +80,10 @@ func (r *ConversationRepository) SoftDelete(conv *models.Conversation, userID ui
 	}).Error
 }
 
-// AddMessage inserts a message into a conversation.
 func (r *ConversationRepository) AddMessage(m *models.Message) error {
 	return r.db.Create(m).Error
 }
 
-// ListMessages returns a conversation's messages in chronological order.
 func (r *ConversationRepository) ListMessages(conversationID uint) ([]models.Message, error) {
 	var messages []models.Message
 	err := r.db.
@@ -101,24 +91,4 @@ func (r *ConversationRepository) ListMessages(conversationID uint) ([]models.Mes
 		Order("created_at ASC").
 		Find(&messages).Error
 	return messages, err
-}
-
-// MarkRead flags as read every message in the conversation that the reader did
-// not send.
-func (r *ConversationRepository) MarkRead(conversationID, readerID uint) error {
-	return r.db.Model(&models.Message{}).
-		Where("conversation_id = ? AND sender_id <> ?", conversationID, readerID).
-		Update("is_read", true).Error
-}
-
-// UnreadCount counts the user's unread messages across all their conversations.
-func (r *ConversationRepository) UnreadCount(userID uint) (int64, error) {
-	var n int64
-	err := r.db.Model(&models.Message{}).
-		Joins("JOIN conversations c ON c.id = messages.conversation_id").
-		Where("(c.client_id = ? OR c.agent_id = ?)", userID, userID).
-		Where("messages.sender_id <> ?", userID).
-		Where("messages.is_read = ?", false).
-		Count(&n).Error
-	return n, err
 }

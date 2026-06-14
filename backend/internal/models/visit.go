@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// Visit status values (must match the ENUM in db/schema.sql).
 const (
 	VisitStatusRequested = "REQUESTED"
 	VisitStatusConfirmed = "CONFIRMED"
@@ -10,8 +9,6 @@ const (
 	VisitStatusCompleted = "COMPLETED"
 )
 
-// Visit maps the `visits` table: a client asks to visit a property, handled
-// by the property's agent.
 type Visit struct {
 	ID          uint      `gorm:"primaryKey;column:id" json:"id"`
 	PropertyID  uint      `gorm:"column:property_id" json:"property_id"`

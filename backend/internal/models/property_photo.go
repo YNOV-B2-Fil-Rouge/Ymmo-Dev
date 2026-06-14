@@ -1,6 +1,5 @@
 package models
 
-// PropertyPhoto maps the `property_photos` table (1 property -> N photos).
 type PropertyPhoto struct {
 	ID         uint   `gorm:"primaryKey;column:id" json:"id"`
 	PropertyID uint   `gorm:"column:property_id" json:"property_id"`

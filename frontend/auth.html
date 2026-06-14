@@ -15,7 +15,6 @@
 <body class="bg-alyssum text-midnight font-sans antialiased h-screen overflow-hidden flex flex-col">
   <a href="#card" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au formulaire</a>
 
-  <!-- ===== Header ===== -->
   <header class="bg-alyssum border-b-2 border-hibiscus shrink-0">
     <div class="max-w-6xl mx-auto px-4 h-14 flex items-center">
       <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
@@ -31,14 +30,11 @@
     </div>
   </header>
 
-  <!-- ===== Main ===== -->
   <main class="relative flex-1 flex items-center overflow-hidden">
-    <!-- Background image (replace the URL with your own asset) -->
     <div class="absolute inset-0 bg-midnight bg-cover bg-center"
          style="background-image:url('https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1600&q=80')"
          aria-hidden="true"></div>
 
-    <!-- Large logo watermark (hidden on small screens) -->
     <div class="hidden lg:block absolute left-10 top-1/2 -translate-y-1/2 text-hibiscus/80" aria-hidden="true">
       <svg width="230" height="230" viewBox="0 0 100 100" fill="none">
         <path d="M22 46 L50 22 L78 46" stroke="currentColor" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
@@ -47,11 +43,9 @@
       </svg>
     </div>
 
-    <!-- Card -->
     <div class="relative w-full max-w-6xl mx-auto px-4 flex justify-center lg:justify-end">
       <section id="card" class="w-full max-w-md bg-alyssum/95 backdrop-blur rounded-2xl shadow-xl p-5 sm:p-6" aria-labelledby="auth-title">
 
-        <!-- Toggle -->
         <div class="flex justify-center mb-4">
           <div class="inline-flex rounded-full border border-hibiscus p-1 bg-white" role="tablist" aria-label="Connexion ou inscription">
             <button id="tab-login" data-tab="login" role="tab" aria-selected="true"
@@ -67,7 +61,6 @@
 
         <h1 id="auth-title" class="sr-only">Connexion ou inscription</h1>
 
-        <!-- ===== Login form (compact, its own size) ===== -->
         <form id="login-form" novalidate>
           <h2 class="text-xl font-bold text-center mb-4">Connectez-vous</h2>
 
@@ -97,7 +90,6 @@
           </div>
         </form>
 
-        <!-- ===== Register form (compact, its own size) ===== -->
         <form id="register-form" class="hidden" novalidate>
           <h2 class="text-xl font-bold text-center mb-4">Inscrivez-vous</h2>
 

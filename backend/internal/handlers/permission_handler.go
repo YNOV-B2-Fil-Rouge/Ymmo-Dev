@@ -16,7 +16,6 @@ func NewPermissionHandler(svc *services.PermissionService) *PermissionHandler {
 	return &PermissionHandler{svc: svc}
 }
 
-// GetMatrix returns the department access matrix (IT / HQ).
 // @Summary      Get the access-rights matrix
 // @Tags         permissions
 // @Produce      json

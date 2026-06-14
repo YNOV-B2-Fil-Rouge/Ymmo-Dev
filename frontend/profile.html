@@ -15,7 +15,6 @@
 <body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
   <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au contenu</a>
 
-  <!-- ===== Header ===== -->
   <header class="bg-alyssum border-b-2 border-hibiscus">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center">
       <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
@@ -31,11 +30,9 @@
     </div>
   </header>
 
-  <!-- ===== Main ===== -->
   <main id="main" class="flex-1 max-w-6xl mx-auto w-full px-4 py-10">
     <div class="grid md:grid-cols-[280px_1fr] gap-8">
 
-      <!-- Sidebar -->
       <aside class="md:border-r border-hibiscus/30 md:pr-8">
         <div id="avatar" class="w-28 h-28 rounded-full bg-hibiscus text-white flex items-center justify-center text-3xl font-semibold mx-auto" aria-hidden="true">—</div>
         <p id="full-name" class="text-center text-xl font-bold mt-4">…</p>
@@ -62,62 +59,29 @@
         </nav>
       </aside>
 
-      <!-- Content -->
       <section>
-        <!-- Mes biens -->
         <div id="panel-biens" class="panel hidden">
           <h1 class="text-2xl font-bold mb-6">Mes biens :</h1>
           <p class="text-slate2">La gestion de vos biens arrivera bientôt.</p>
         </div>
 
-        <!-- Mes visites -->
         <div id="panel-visites" class="panel hidden">
           <h1 class="text-2xl font-bold mb-6">Mes visites :</h1>
           <ul id="visites-list" class="space-y-3"></ul>
           <p id="visites-empty" class="hidden text-slate2">Vous n'avez aucune visite. Demandez-en une depuis une fiche bien.</p>
         </div>
 
-        <!-- Mes alertes -->
         <div id="panel-alertes" class="panel hidden">
           <h1 class="text-2xl font-bold mb-6">Mes alertes :</h1>
           <ul id="alertes-list" class="space-y-3"></ul>
           <p id="alertes-empty" class="hidden text-slate2">Vous n'avez aucune alerte. Créez-en une depuis la recherche.</p>
         </div>
 
-        <!-- Mes favoris -->
         <div id="panel-favoris" class="panel">
           <h1 class="text-2xl font-bold mb-6">Mes favoris :</h1>
           <div id="favoris-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
           <p id="favoris-empty" class="hidden text-slate2">Vous n'avez pas encore de favoris.</p>
         </div>
 
-        <!-- Paramètres -->
         <div id="panel-settings" class="panel hidden">
-          <h1 class="text-2xl font-bold mb-6">Paramètres du compte :</h1>
-          <dl class="space-y-3 max-w-md">
-            <div class="flex justify-between border-b border-slate2/20 pb-2">
-              <dt class="text-slate2">Nom</dt><dd id="set-name" class="font-medium"></dd>
-            </div>
-            <div class="flex justify-between border-b border-slate2/20 pb-2">
-              <dt class="text-slate2">Email</dt><dd id="set-email" class="font-medium"></dd>
-            </div>
-            <div class="flex justify-between border-b border-slate2/20 pb-2">
-              <dt class="text-slate2">Rôle</dt><dd id="set-role" class="font-medium"></dd>
-            </div>
-          </dl>
-          <p class="text-slate2 text-sm mt-4">La modification du profil et la suppression du compte seront disponibles prochainement.</p>
-
-          <!-- Become a seller (buyers only; filled by profile.js) -->
-          <div id="seller-cta" class="hidden mt-6 border border-gold/60 rounded-lg p-4 bg-white max-w-md"></div>
-
-          <button id="logout-btn" class="mt-6 border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white font-medium px-6 py-2.5 rounded-lg transition-colors">
-            Se déconnecter
-          </button>
-        </div>
-      </section>
-    </div>
-  </main>
-
-  <script type="module" src="./js/profile.js"></script>
-</body>
-</html>
+          <h1 class="text-2xl font

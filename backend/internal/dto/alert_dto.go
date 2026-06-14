@@ -1,7 +1,5 @@
 package dto
 
-// CreateAlertRequest saves a search. All criteria are optional; an empty one
-// means "don't filter on this field".
 type CreateAlertRequest struct {
 	City       string   `json:"city" binding:"omitempty,max=100"`
 	CategoryID *uint8   `json:"category_id" binding:"omitempty"`

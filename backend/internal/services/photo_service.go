@@ -19,9 +19,6 @@ func NewPhotoService(photos *repositories.PhotoRepository, properties *repositor
 	return &PhotoService{photos: photos, properties: properties}
 }
 
-// Add attaches a photo to a property. If it is flagged primary, any previous
-// primary is cleared first (only one primary per property). The sort order is
-// set to the current photo count so photos keep their insertion order.
 func (s *PhotoService) Add(propertyID uint, req dto.AddPhotoRequest) (*models.PropertyPhoto, error) {
 	property, err := s.properties.FindByID(propertyID)
 	if err != nil {
@@ -54,7 +51,6 @@ func (s *PhotoService) Add(propertyID uint, req dto.AddPhotoRequest) (*models.Pr
 	return photo, nil
 }
 
-// Delete removes a photo after checking it exists.
 func (s *PhotoService) Delete(photoID uint) error {
 	photo, err := s.photos.FindByID(photoID)
 	if err != nil {

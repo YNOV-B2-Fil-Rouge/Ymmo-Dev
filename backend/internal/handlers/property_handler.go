@@ -20,7 +20,6 @@ func NewPropertyHandler(svc *services.PropertyService) *PropertyHandler {
 	return &PropertyHandler{svc: svc}
 }
 
-// List returns the public, filtered, paginated catalogue.
 // @Summary      List / search properties
 // @Description  Public catalogue. Only AVAILABLE properties are returned by default.
 // @Tags         properties
@@ -57,7 +56,6 @@ func (h *PropertyHandler) List(c *gin.Context) {
 	})
 }
 
-// ListMine returns the current agent's properties (all statuses, staff only).
 // @Summary      List my properties
 // @Tags         properties
 // @Produce      json
@@ -76,7 +74,6 @@ func (h *PropertyHandler) ListMine(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// ListAll returns every property (all statuses) for director/HQ management.
 // @Summary      List all properties (management)
 // @Tags         properties
 // @Produce      json
@@ -96,7 +93,6 @@ func (h *PropertyHandler) ListAll(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// Get returns a single property and records a view.
 // @Summary      Get a property by id
 // @Description  Returns the property and increments its view counter.
 // @Tags         properties
@@ -123,7 +119,6 @@ func (h *PropertyHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, property)
 }
 
-// Create lists a new property.
 // @Summary      Create a property
 // @Description  Staff create a DRAFT they own; a seller submits a PENDING_REVIEW listing for validation.
 // @Tags         properties
@@ -153,7 +148,6 @@ func (h *PropertyHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, property)
 }
 
-// ListPending returns seller submissions awaiting validation (staff only).
 // @Summary      List properties awaiting validation
 // @Description  Seller submissions in PENDING_REVIEW. Scoped to the staff member's agency (HQ sees all).
 // @Tags         properties
@@ -174,116 +168,5 @@ func (h *PropertyHandler) ListPending(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// Validate approves a seller submission (staff only): the reviewing agent
-// becomes the assigned agent and the property goes live.
 // @Summary      Validate a seller submission
 // @Tags         properties
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id   path      int  true  "Property id"
-// @Success      200  {object}  models.Property
-// @Failure      400  {object}  map[string]string
-// @Failure      401  {object}  map[string]string
-// @Failure      403  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Router       /properties/{id}/validate [post]
-func (h *PropertyHandler) Validate(c *gin.Context) {
-	id, ok := parseID(c)
-	if !ok {
-		return
-	}
-	agentID := middleware.CurrentUserID(c)
-	property, err := h.svc.Validate(id, agentID)
-	if err != nil {
-		switch {
-		case errors.Is(err, services.ErrPropertyNotFound):
-			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
-		case errors.Is(err, services.ErrNotPendingReview):
-			c.JSON(http.StatusBadRequest, gin.H{"error": "this property is not awaiting validation"})
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not validate property"})
-		}
-		return
-	}
-	c.JSON(http.StatusOK, property)
-}
-
-// Update applies a partial change to a property.
-// @Summary      Update a property
-// @Description  Staff only. Partial update: only the fields sent are changed.
-// @Tags         properties
-// @Accept       json
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id    path      int                        true  "Property id"
-// @Param        body  body      dto.UpdatePropertyRequest  true  "Fields to update"
-// @Success      200   {object}  models.Property
-// @Failure      400   {object}  map[string]string
-// @Failure      401   {object}  map[string]string
-// @Failure      403   {object}  map[string]string
-// @Failure      404   {object}  map[string]string
-// @Router       /properties/{id} [put]
-func (h *PropertyHandler) Update(c *gin.Context) {
-	id, ok := parseID(c)
-	if !ok {
-		return
-	}
-
-	var req dto.UpdatePropertyRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid input", "details": err.Error()})
-		return
-	}
-
-	property, err := h.svc.Update(id, req)
-	if err != nil {
-		if errors.Is(err, services.ErrPropertyNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update property"})
-		return
-	}
-	c.JSON(http.StatusOK, property)
-}
-
-// Delete removes a property.
-// @Summary      Delete a property
-// @Description  Staff only.
-// @Tags         properties
-// @Produce      json
-// @Security     BearerAuth
-// @Param        id   path  int  true  "Property id"
-// @Success      204  "No Content"
-// @Failure      401  {object}  map[string]string
-// @Failure      403  {object}  map[string]string
-// @Failure      404  {object}  map[string]string
-// @Router       /properties/{id} [delete]
-func (h *PropertyHandler) Delete(c *gin.Context) {
-	id, ok := parseID(c)
-	if !ok {
-		return
-	}
-
-	if err := h.svc.Delete(id); err != nil {
-		if errors.Is(err, services.ErrPropertyNotFound) {
-			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete property"})
-		return
-	}
-	c.Status(http.StatusNoContent)
-}
-
-// parseID reads and validates the :id path parameter. It writes a 400 and
-// returns ok=false when the value is not a positive integer.
-func parseID(c *gin.Context) (uint, bool) {
-	raw := c.Param("id")
-	id, err := strconv.ParseUint(raw, 10, 64)
-	if err != nil || id == 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
-		return 0, false
-	}
-	return uint(id), true
-}

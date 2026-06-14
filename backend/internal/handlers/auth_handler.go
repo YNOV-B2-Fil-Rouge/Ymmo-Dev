@@ -11,7 +11,6 @@ import (
 	"ymmo/internal/services"
 )
 
-// AuthHandler exposes the authentication endpoints.
 type AuthHandler struct {
 	svc *services.AuthService
 }
@@ -20,7 +19,6 @@ func NewAuthHandler(svc *services.AuthService) *AuthHandler {
 	return &AuthHandler{svc: svc}
 }
 
-// Register creates a new buyer account.
 // @Summary      Register a new buyer account
 // @Description  Creates a buyer account. The role is forced to BUYER server-side.
 // @Tags         auth
@@ -52,7 +50,6 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, dto.NewUserResponse(user))
 }
 
-// Login authenticates and returns a JWT.
 // @Summary      Log in and get a JWT
 // @Tags         auth
 // @Accept       json
@@ -73,7 +70,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	if err != nil {
 		switch {
 		case errors.Is(err, services.ErrInvalidCredentials), errors.Is(err, services.ErrInactiveAccount):
-			// Same message for both -> no information leak about which failed.
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid email or password"})
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "login failed"})
@@ -87,7 +83,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	})
 }
 
-// Me returns the currently authenticated user's profile.
 // @Summary      Get the current user's profile
 // @Tags         auth
 // @Produce      json

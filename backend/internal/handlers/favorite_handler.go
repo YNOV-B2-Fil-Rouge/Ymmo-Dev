@@ -18,7 +18,6 @@ func NewFavoriteHandler(svc *services.FavoriteService) *FavoriteHandler {
 	return &FavoriteHandler{svc: svc}
 }
 
-// Add favorites a property for the current user.
 // @Summary      Add a property to favorites
 // @Tags         favorites
 // @Produce      json
@@ -45,7 +44,6 @@ func (h *FavoriteHandler) Add(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// Remove un-favorites a property for the current user.
 // @Summary      Remove a property from favorites
 // @Tags         favorites
 // @Produce      json
@@ -67,7 +65,6 @@ func (h *FavoriteHandler) Remove(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// List returns the current user's favorited properties.
 // @Summary      List my favorite properties
 // @Tags         favorites
 // @Produce      json

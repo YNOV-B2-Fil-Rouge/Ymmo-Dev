@@ -16,7 +16,6 @@ var (
 	ErrSellerRoleMissing   = errors.New("SELLER role not found (check seed data)")
 )
 
-// SellerApplicationService implements the buyer→seller promotion workflow.
 type SellerApplicationService struct {
 	apps  *repositories.SellerApplicationRepository
 	users *repositories.UserRepository
@@ -31,8 +30,6 @@ func NewSellerApplicationService(
 	return &SellerApplicationService{apps: apps, users: users, roles: roles}
 }
 
-// Apply records a buyer's request. Only a BUYER may apply, and only once at a
-// time (no duplicate pending request).
 func (s *SellerApplicationService) Apply(userID uint, role string, req dto.ApplyAsSellerRequest) (*models.SellerApplication, error) {
 	if role != "BUYER" {
 		return nil, ErrNotBuyerRole
@@ -58,17 +55,14 @@ func (s *SellerApplicationService) Apply(userID uint, role string, req dto.Apply
 	return app, nil
 }
 
-// Mine returns the user's most recent application (or nil if they never applied).
 func (s *SellerApplicationService) Mine(userID uint) (*models.SellerApplication, error) {
 	return s.apps.FindLatestByUser(userID)
 }
 
-// ListPending returns the applications awaiting an agent's review.
 func (s *SellerApplicationService) ListPending() ([]models.SellerApplication, error) {
 	return s.apps.ListPending()
 }
 
-// Approve validates an application AND promotes the applicant to SELLER.
 func (s *SellerApplicationService) Approve(appID, reviewerID uint) (*models.SellerApplication, error) {
 	app, err := s.loadReviewable(appID)
 	if err != nil {
@@ -91,7 +85,6 @@ func (s *SellerApplicationService) Approve(appID, reviewerID uint) (*models.Sell
 	return s.apps.FindByID(appID)
 }
 
-// Reject declines an application without changing the user's role.
 func (s *SellerApplicationService) Reject(appID, reviewerID uint) (*models.SellerApplication, error) {
 	if _, err := s.loadReviewable(appID); err != nil {
 		return nil, err
@@ -102,7 +95,6 @@ func (s *SellerApplicationService) Reject(appID, reviewerID uint) (*models.Selle
 	return s.apps.FindByID(appID)
 }
 
-// loadReviewable fetches an application and ensures it is still pending.
 func (s *SellerApplicationService) loadReviewable(appID uint) (*models.SellerApplication, error) {
 	app, err := s.apps.FindByID(appID)
 	if err != nil {

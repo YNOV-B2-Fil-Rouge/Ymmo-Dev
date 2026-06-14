@@ -19,7 +19,6 @@ func NewVisitHandler(svc *services.VisitService) *VisitHandler {
 	return &VisitHandler{svc: svc}
 }
 
-// Request asks to visit a property.
 // @Summary      Request a property visit
 // @Tags         visits
 // @Accept       json
@@ -65,7 +64,6 @@ func (h *VisitHandler) Request(c *gin.Context) {
 	c.JSON(http.StatusCreated, visit)
 }
 
-// List returns the current user's visits.
 // @Summary      List my visits
 // @Tags         visits
 // @Produce      json
@@ -83,7 +81,6 @@ func (h *VisitHandler) List(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// UpdateStatus changes a visit's status (confirm / cancel / complete).
 // @Summary      Update a visit status
 // @Tags         visits
 // @Accept       json

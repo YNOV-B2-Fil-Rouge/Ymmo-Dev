@@ -17,12 +17,10 @@ func NewVisitRepository(db *gorm.DB) *VisitRepository {
 	return &VisitRepository{db: db}
 }
 
-// Create inserts a new visit.
 func (r *VisitRepository) Create(v *models.Visit) error {
 	return r.db.Create(v).Error
 }
 
-// FindByID returns a visit or nil.
 func (r *VisitRepository) FindByID(id uint) (*models.Visit, error) {
 	var v models.Visit
 	err := r.db.First(&v, id).Error
@@ -35,8 +33,6 @@ func (r *VisitRepository) FindByID(id uint) (*models.Visit, error) {
 	return &v, nil
 }
 
-// ListForUser returns the visits the user takes part in (as client or agent),
-// soonest first.
 func (r *VisitRepository) ListForUser(userID uint) ([]models.Visit, error) {
 	var visits []models.Visit
 	err := r.db.
@@ -46,14 +42,11 @@ func (r *VisitRepository) ListForUser(userID uint) ([]models.Visit, error) {
 	return visits, err
 }
 
-// UpdateStatus changes a visit's status.
 func (r *VisitRepository) UpdateStatus(id uint, status string) error {
 	return r.db.Model(&models.Visit{}).Where("id = ?", id).
 		Update("status", status).Error
 }
 
-// ExistsForSchedule reports whether a non-cancelled visit already exists for
-// the same property, client and date (duplicate-request guard).
 func (r *VisitRepository) ExistsForSchedule(propertyID, clientID uint, scheduledAt time.Time) (bool, error) {
 	var count int64
 	err := r.db.Model(&models.Visit{}).

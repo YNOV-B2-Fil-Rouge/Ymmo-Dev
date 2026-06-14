@@ -20,7 +20,6 @@ func NewSellerApplicationHandler(svc *services.SellerApplicationService) *Seller
 	return &SellerApplicationHandler{svc: svc}
 }
 
-// Apply lets a buyer request to become a seller.
 // @Summary      Apply to become a seller
 // @Description  Buyer only. Creates a PENDING application reviewed by an agent.
 // @Tags         seller-applications
@@ -34,7 +33,6 @@ func NewSellerApplicationHandler(svc *services.SellerApplicationService) *Seller
 // @Router       /seller-applications [post]
 func (h *SellerApplicationHandler) Apply(c *gin.Context) {
 	var req dto.ApplyAsSellerRequest
-	// Body is optional; ignore "EOF" when nothing is sent.
 	_ = c.ShouldBindJSON(&req)
 
 	userID := middleware.CurrentUserID(c)
@@ -54,7 +52,6 @@ func (h *SellerApplicationHandler) Apply(c *gin.Context) {
 	c.JSON(http.StatusCreated, app)
 }
 
-// Mine returns the current user's latest application (or null).
 // @Summary      My seller application
 // @Tags         seller-applications
 // @Produce      json
@@ -71,7 +68,6 @@ func (h *SellerApplicationHandler) Mine(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": app})
 }
 
-// ListPending returns applications awaiting review (staff only).
 // @Summary      List pending seller applications
 // @Tags         seller-applications
 // @Produce      json
@@ -87,7 +83,6 @@ func (h *SellerApplicationHandler) ListPending(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 
-// Approve validates an application and promotes the user to seller (staff only).
 // @Summary      Approve a seller application
 // @Tags         seller-applications
 // @Produce      json
@@ -99,7 +94,6 @@ func (h *SellerApplicationHandler) Approve(c *gin.Context) {
 	h.review(c, true)
 }
 
-// Reject declines an application (staff only).
 // @Summary      Reject a seller application
 // @Tags         seller-applications
 // @Produce      json

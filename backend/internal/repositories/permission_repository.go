@@ -2,8 +2,6 @@ package repositories
 
 import "gorm.io/gorm"
 
-// PermissionRow is one cell of the access matrix, with department names
-// resolved.
 type PermissionRow struct {
 	Requester string `json:"requester"`
 	Target    string `json:"target"`
@@ -18,8 +16,6 @@ func NewPermissionRepository(db *gorm.DB) *PermissionRepository {
 	return &PermissionRepository{db: db}
 }
 
-// ListMatrix returns the department access matrix (the brief's "matrice des
-// droits") with department names joined in.
 func (r *PermissionRepository) ListMatrix() ([]PermissionRow, error) {
 	var rows []PermissionRow
 	err := r.db.

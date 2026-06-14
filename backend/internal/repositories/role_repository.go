@@ -16,7 +16,6 @@ func NewRoleRepository(db *gorm.DB) *RoleRepository {
 	return &RoleRepository{db: db}
 }
 
-// FindByCode returns the role matching a code (e.g. "BUYER") or nil.
 func (r *RoleRepository) FindByCode(code string) (*models.Role, error) {
 	var role models.Role
 	err := r.db.Where("code = ?", code).First(&role).Error

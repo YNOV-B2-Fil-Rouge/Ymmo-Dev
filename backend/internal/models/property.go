@@ -2,7 +2,6 @@ package models
 
 import "time"
 
-// Property status values (must match the ENUM in db/schema.sql).
 const (
 	PropertyStatusDraft         = "DRAFT"
 	PropertyStatusPendingReview = "PENDING_REVIEW"
@@ -12,9 +11,6 @@ const (
 	PropertyStatusWithdrawn     = "WITHDRAWN"
 )
 
-// Property maps the `properties` table (the core business entity).
-// Optional columns use pointers so a NULL in the database stays distinct
-// from a zero value (0, "", false).
 type Property struct {
 	ID          uint     `gorm:"primaryKey;column:id" json:"id"`
 	Reference   string   `gorm:"column:reference" json:"reference"`
@@ -23,14 +19,14 @@ type Property struct {
 	CategoryID  uint8    `gorm:"column:category_id" json:"category_id"`
 	Status      string   `gorm:"column:status" json:"status"`
 	Price       float64  `gorm:"column:price" json:"price"`
-	Area        float64  `gorm:"column:area" json:"area"` // m²
+	Area        float64  `gorm:"column:area" json:"area"`
 	Rooms       *uint8   `gorm:"column:rooms" json:"rooms,omitempty"`
 	Bedrooms    *uint8   `gorm:"column:bedrooms" json:"bedrooms,omitempty"`
 	Bathrooms   *uint8   `gorm:"column:bathrooms" json:"bathrooms,omitempty"`
 	Floor       *int8    `gorm:"column:floor" json:"floor,omitempty"`
 	BuildYear   *uint16  `gorm:"column:build_year" json:"build_year,omitempty"`
-	EnergyRating *string `gorm:"column:energy_rating" json:"energy_rating,omitempty"` // DPE A..G
-	GhgRating   *string  `gorm:"column:ghg_rating" json:"ghg_rating,omitempty"`       // GES A..G
+	EnergyRating *string `gorm:"column:energy_rating" json:"energy_rating,omitempty"`
+	GhgRating   *string  `gorm:"column:ghg_rating" json:"ghg_rating,omitempty"`
 	Address     *string  `gorm:"column:address" json:"address,omitempty"`
 	City        string   `gorm:"column:city" json:"city"`
 	PostalCode  string   `gorm:"column:postal_code" json:"postal_code"`
@@ -48,7 +44,6 @@ type Property struct {
 	CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 	UpdatedAt time.Time `gorm:"column:updated_at" json:"updated_at"`
 
-	// Associations (loaded with Preload).
 	Category *PropertyCategory `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 	Photos   []PropertyPhoto   `gorm:"foreignKey:PropertyID" json:"photos,omitempty"`
 }

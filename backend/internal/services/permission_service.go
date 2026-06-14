@@ -10,7 +10,6 @@ func NewPermissionService(perms *repositories.PermissionRepository) *PermissionS
 	return &PermissionService{perms: perms}
 }
 
-// Matrix returns the department access matrix.
 func (s *PermissionService) Matrix() ([]repositories.PermissionRow, error) {
 	return s.perms.ListMatrix()
 }

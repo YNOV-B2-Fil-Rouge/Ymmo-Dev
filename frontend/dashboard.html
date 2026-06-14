@@ -15,7 +15,6 @@
 <body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
   <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au contenu</a>
 
-  <!-- ===== Header ===== -->
   <header class="bg-alyssum border-b-2 border-hibiscus">
     <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
@@ -35,11 +34,9 @@
     </div>
   </header>
 
-  <!-- ===== Main ===== -->
   <main id="main" class="flex-1 max-w-6xl mx-auto w-full px-4 py-10">
     <div class="grid md:grid-cols-[260px_1fr] gap-8">
 
-      <!-- Sidebar -->
       <aside class="md:border-r border-hibiscus/30 md:pr-8">
         <h1 class="text-2xl font-bold mb-6">Dashboard :</h1>
         <nav class="space-y-3" aria-label="Sections du dashboard">
@@ -53,15 +50,12 @@
         </nav>
       </aside>
 
-      <!-- Content -->
       <section>
-        <!-- Overview / KPIs -->
         <div id="panel-overview" class="panel hidden">
           <h2 class="text-2xl font-bold mb-6">Vue d'ensemble</h2>
           <div id="kpi-grid" class="grid grid-cols-2 lg:grid-cols-4 gap-4"></div>
         </div>
 
-        <!-- My properties -->
         <div id="panel-biens" class="panel">
           <div class="flex items-center justify-between mb-6">
             <h2 class="text-2xl font-bold">Mes biens</h2>
@@ -71,107 +65,6 @@
           <p id="biens-empty" class="hidden text-slate2">Vous n'avez aucun bien assigné.</p>
         </div>
 
-        <!-- Seller submissions to validate -->
         <div id="panel-valider" class="panel hidden">
           <h2 class="text-2xl font-bold mb-6">Biens soumis à validation</h2>
-          <p class="text-slate2 mb-6">Annonces proposées par des vendeurs. Valider une annonce vous l'assigne et la publie.</p>
-          <div id="pending-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-          <p id="pending-empty" class="hidden text-slate2">Aucun bien en attente de validation.</p>
-        </div>
-
-        <!-- Become-seller applications -->
-        <div id="panel-vendeurs" class="panel hidden">
-          <h2 class="text-2xl font-bold mb-6">Demandes pour devenir vendeur</h2>
-          <p class="text-slate2 mb-6">Approuver une demande promeut l'acheteur en vendeur (il pourra proposer des biens).</p>
-          <ul id="sellers-list" class="space-y-3"></ul>
-          <p id="sellers-empty" class="hidden text-slate2">Aucune demande en attente.</p>
-        </div>
-
-        <!-- Planning -->
-        <div id="panel-planning" class="panel hidden">
-          <h2 class="text-2xl font-bold mb-6">Planning</h2>
-          <h3 class="font-semibold text-hibiscus mb-3">Visites</h3>
-          <ul id="visits-list" class="space-y-2 mb-8"></ul>
-          <p id="visits-empty" class="hidden text-slate2 mb-8">Aucune visite programmée.</p>
-
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-hibiscus">Réunions</h3>
-            <button id="meeting-toggle" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-3 py-1.5 rounded-md transition-colors">+ Nouvelle réunion</button>
-          </div>
-
-          <form id="meeting-form" class="hidden border border-hibiscus/30 rounded-lg p-4 bg-white mb-4 grid sm:grid-cols-2 gap-3">
-            <div class="sm:col-span-2">
-              <label for="m-title" class="block text-xs font-semibold text-hibiscus mb-1">Titre *</label>
-              <input id="m-title" type="text" required class="ym-input" placeholder="Point hebdo agence" />
-            </div>
-            <div>
-              <label for="m-agency" class="block text-xs font-semibold text-hibiscus mb-1">Agence (ID) *</label>
-              <input id="m-agency" type="number" min="1" required class="ym-input" placeholder="1" />
-            </div>
-            <div>
-              <label for="m-location" class="block text-xs font-semibold text-hibiscus mb-1">Lieu</label>
-              <input id="m-location" type="text" class="ym-input" placeholder="Salle de réunion" />
-            </div>
-            <div>
-              <label for="m-start" class="block text-xs font-semibold text-hibiscus mb-1">Début *</label>
-              <input id="m-start" type="datetime-local" required class="ym-input" />
-            </div>
-            <div>
-              <label for="m-end" class="block text-xs font-semibold text-hibiscus mb-1">Fin *</label>
-              <input id="m-end" type="datetime-local" required class="ym-input" />
-            </div>
-            <div class="sm:col-span-2 flex items-center gap-3">
-              <button type="submit" class="bg-hibiscus hover:bg-hibiscus/90 text-white text-sm font-medium px-5 py-2 rounded-md transition-colors">Créer</button>
-              <p id="meeting-error" class="hidden text-sm text-hibiscus"></p>
-            </div>
-          </form>
-
-          <ul id="meetings-list" class="space-y-2"></ul>
-          <p id="meetings-empty" class="hidden text-slate2">Aucune réunion programmée.</p>
-        </div>
-
-        <!-- Sale files -->
-        <div id="panel-ventes" class="panel hidden">
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold">Dossiers de vente</h2>
-            <button id="sale-toggle" class="bg-hibiscus hover:bg-hibiscus/90 text-white text-sm font-medium px-4 py-2 rounded-md transition-colors">+ Nouveau dossier</button>
-          </div>
-
-          <form id="sale-form" class="hidden border border-hibiscus/30 rounded-lg p-4 bg-white mb-6 grid sm:grid-cols-2 gap-3">
-            <div>
-              <label for="s-property" class="block text-xs font-semibold text-hibiscus mb-1">Bien (ID) *</label>
-              <input id="s-property" type="number" min="1" required class="ym-input" placeholder="1" />
-            </div>
-            <div>
-              <label for="s-buyer" class="block text-xs font-semibold text-hibiscus mb-1">Acheteur (ID) *</label>
-              <input id="s-buyer" type="number" min="1" required class="ym-input" placeholder="3" />
-            </div>
-            <div>
-              <label for="s-price" class="block text-xs font-semibold text-hibiscus mb-1">Prix négocié (€)</label>
-              <input id="s-price" type="number" min="0" step="1000" class="ym-input" />
-            </div>
-            <div>
-              <label for="s-offer" class="block text-xs font-semibold text-hibiscus mb-1">Date de l'offre</label>
-              <input id="s-offer" type="date" class="ym-input" />
-            </div>
-            <div class="sm:col-span-2 flex items-center gap-3">
-              <button type="submit" class="bg-hibiscus hover:bg-hibiscus/90 text-white text-sm font-medium px-5 py-2 rounded-md transition-colors">Ouvrir le dossier</button>
-              <p id="sale-error" class="hidden text-sm text-hibiscus"></p>
-            </div>
-          </form>
-
-          <ul id="sales-list" class="space-y-3"></ul>
-          <p id="sales-empty" class="hidden text-slate2">Aucun dossier de vente.</p>
-        </div>
-      </section>
-    </div>
-  </main>
-
-  <style>
-    .ym-input { width:100%; border-radius:0.375rem; border:1px solid rgba(182,55,83,.6); background:#fff; padding:0.4rem 0.6rem; font-size:0.875rem; }
-    .ym-input:focus { outline:none; border-color:#b63753; box-shadow:0 0 0 2px rgba(182,55,83,.25); }
-  </style>
-
-  <script type="module" src="./js/dashboard.js"></script>
-</body>
-</html>
+          <p class="text-
