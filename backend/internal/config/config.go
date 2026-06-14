@@ -12,10 +12,12 @@ import (
 
 // Config holds every runtime setting the application needs.
 type Config struct {
-	AppEnv    string // "development" | "production"
-	AppPort   string // HTTP port the API listens on
-	JWTSecret string // signing key for JWT (used by the auth module later)
-	AIBaseURL string // internal URL of the Python AI service (proxied)
+	AppEnv     string // "development" | "production"
+	AppPort    string // HTTP port the API listens on
+	JWTSecret  string // signing key for JWT (used by the auth module later)
+	AIBaseURL  string // internal URL of the Python AI service (proxied)
+	UploadDir  string // on-disk directory where uploaded photos are stored
+	PublicURL  string // public base URL of this API (to build photo URLs)
 
 	DB DBConfig
 }
@@ -48,6 +50,8 @@ func Load() (*Config, error) {
 		AppPort:   getEnv("APP_PORT", "8080"),
 		JWTSecret: os.Getenv("JWT_SECRET"),
 		AIBaseURL: getEnv("AI_BASE_URL", "http://ai:8000"),
+		UploadDir: getEnv("UPLOAD_DIR", "/app/uploads"),
+		PublicURL: getEnv("PUBLIC_API_URL", "http://localhost:8080"),
 		DB: DBConfig{
 			Host:     getEnv("DB_HOST", "127.0.0.1"),
 			Port:     getEnv("DB_PORT", "3306"),

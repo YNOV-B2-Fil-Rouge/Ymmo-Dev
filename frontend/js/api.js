@@ -38,6 +38,20 @@ async function request(path, { method = "GET", body, auth = false } = {}) {
   return data;
 }
 
+// requestForm POSTs multipart/form-data (file uploads). We must NOT set
+// Content-Type ourselves — the browser adds it with the correct boundary.
+async function requestForm(path, formData) {
+  const headers = {};
+  const token = getToken();
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${CONFIG.API_BASE}${path}`, { method: "POST", headers, body: formData });
+  const isJson = res.headers.get("content-type")?.includes("application/json");
+  const data = isJson ? await res.json() : null;
+  if (!res.ok) throw { status: res.status, data };
+  return data;
+}
+
 export const api = {
   // --- Auth ---
   register: (payload) => request("/auth/register", { method: "POST", body: payload }),
@@ -73,6 +87,7 @@ export const api = {
 
   // --- Photos (staff) ---
   addPhoto: (id, payload) => request(`/properties/${id}/photos`, { method: "POST", body: payload, auth: true }),
+  uploadPhoto: (id, formData) => requestForm(`/properties/${id}/photos/upload`, formData),
   deletePhoto: (id, photoId) => request(`/properties/${id}/photos/${photoId}`, { method: "DELETE", auth: true }),
 
   // --- Visits / Planning ---

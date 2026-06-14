@@ -20,9 +20,11 @@ services:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
-      # Run on first startup (empty data volume), in alphabetical order.
+      # Run on first startup (empty data volume), in alphabetical order:
+      #   01 schema (tables + reference data) → 02 read-only AI user → 03 demo seed.
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./db/init-ai-user.sh:/docker-entrypoint-initdb.d/02-ai-user.sh:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/03-seed.sql:ro
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
@@ -51,6 +53,11 @@ services:
       DB_NAME: ${DB_NAME}
       # Internal URL of the Python AI service (proxied via /api/v1/ai/*).
       AI_BASE_URL: http://ai:8000
+      # Property photo uploads: on-disk dir (a volume) + public URL to build links.
+      UPLOAD_DIR: /app/uploads
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+    volumes:
+      - uploads:/app/uploads
     ports:
       - "8080:8080"
 
@@ -95,3 +102,6 @@ volumes:
     # Explicit name so the volume is stable regardless of the project folder
     # name (otherwise Docker prefixes it, e.g. "<folder>_db_data").
     name: ymmo_db_data
+  uploads:
+    # Stores uploaded property photos, persisted across container rebuilds.
+    name: ymmo_uploads

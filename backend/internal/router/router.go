@@ -54,6 +54,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	// Available at http://localhost:8080/swagger/index.html
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	// --- Uploaded property photos (served from the on-disk upload volume) ---
+	// e.g. GET http://localhost:8080/uploads/<file>.jpg
+	r.Static("/uploads", cfg.UploadDir)
+
 	// --- Dependency wiring (composition root) ---
 	// Built once at startup and injected downwards.
 	userRepo := repositories.NewUserRepository(db)
@@ -78,7 +82,7 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 
 	photoRepo := repositories.NewPhotoRepository(db)
 	photoService := services.NewPhotoService(photoRepo, propertyRepo)
-	photoHandler := handlers.NewPhotoHandler(photoService)
+	photoHandler := handlers.NewPhotoHandler(photoService, cfg.UploadDir, cfg.PublicURL)
 
 	conversationRepo := repositories.NewConversationRepository(db)
 	messageService := services.NewMessageService(conversationRepo, userRepo)
@@ -153,8 +157,9 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 				// Approve a seller submission (assign agent + publish).
 				staff.POST("/:id/validate", propertyHandler.Validate)
 
-				// Photo management for a property.
+				// Photo management for a property (by URL, or by file upload).
 				staff.POST("/:id/photos", photoHandler.Add)
+				staff.POST("/:id/photos/upload", photoHandler.Upload)
 				staff.DELETE("/:id/photos/:photoId", photoHandler.Delete)
 			}
 		}

@@ -113,9 +113,23 @@
       <div id="photos-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4"></div>
       <p id="photos-empty" class="hidden text-slate2 mb-4">Aucune photo pour ce bien.</p>
 
+      <!-- Upload from the user's computer -->
+      <div class="flex flex-col sm:flex-row gap-3 sm:items-end mb-4">
+        <div class="flex-1">
+          <label for="photo-file" class="block text-hibiscus font-semibold text-sm mb-1">Depuis votre ordinateur</label>
+          <input id="photo-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif"
+                 class="block w-full text-sm text-slate2 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-hibiscus file:text-white file:cursor-pointer hover:file:bg-hibiscus/90" />
+        </div>
+        <label class="flex items-center gap-2 text-sm whitespace-nowrap">
+          <input id="photo-file-primary" type="checkbox" class="w-4 h-4 accent-hibiscus" /> Photo principale
+        </label>
+        <button type="button" id="photo-upload" class="bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-5 py-2.5 rounded-lg transition-colors">Téléverser</button>
+      </div>
+
+      <!-- Or attach by URL (used by the seed; handy for external images) -->
       <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
         <div class="flex-1">
-          <label for="photo-url" class="block text-hibiscus font-semibold text-sm mb-1">URL de la photo</label>
+          <label for="photo-url" class="block text-hibiscus font-semibold text-sm mb-1">…ou par URL</label>
           <input id="photo-url" type="url" placeholder="https://…" class="ym-input" />
         </div>
         <label class="flex items-center gap-2 text-sm whitespace-nowrap">

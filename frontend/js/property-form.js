@@ -109,6 +109,38 @@ if (editId) {
       err.classList.remove("hidden");
     }
   });
+
+  // Upload an image file from the user's computer.
+  $("photo-upload").addEventListener("click", async () => {
+    const input = $("photo-file");
+    const err = $("photo-error");
+    err.classList.add("hidden");
+    const file = input.files && input.files[0];
+    if (!file) {
+      err.textContent = "Choisissez un fichier image.";
+      err.classList.remove("hidden");
+      return;
+    }
+
+    const fd = new FormData();
+    fd.append("file", file);
+    if ($("photo-file-primary").checked) fd.append("is_primary", "true");
+
+    const btn = $("photo-upload");
+    btn.disabled = true;
+    try {
+      await api.uploadPhoto(editId, fd);
+      input.value = "";
+      $("photo-file-primary").checked = false;
+      await reloadPhotos();
+    } catch (e) {
+      err.textContent =
+        e.status === 400 ? "Fichier invalide (image jpg/png/webp/gif, max 5 Mo)."
+        : "Téléversement impossible.";
+      err.classList.remove("hidden");
+    }
+    btn.disabled = false;
+  });
 }
 
 // Re-fetch the property just to refresh its photo list.
@@ -199,11 +231,14 @@ form.addEventListener("submit", async (e) => {
     if (editId) {
       payload.status = $("status").value;
       await api.updateProperty(editId, payload);
+      window.location.href = afterSubmitHref;
     } else {
       payload.agency_id = Number($("agency_id").value);
-      await api.createProperty(payload); // seller -> PENDING_REVIEW, staff -> DRAFT
+      const created = await api.createProperty(payload); // seller -> PENDING_REVIEW, staff -> DRAFT
+      // Staff land on the new property's edit page to add photos right away;
+      // sellers (who can't edit) go back to their profile.
+      window.location.href = isSeller ? "./profile.html" : `./property-form.html?id=${created.id}`;
     }
-    window.location.href = afterSubmitHref;
   } catch (err) {
     showError(err.status === 400 ? "Vérifiez les champs (prix, surface, ville…)." : "Une erreur est survenue.");
     btn.disabled = false;

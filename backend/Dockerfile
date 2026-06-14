@@ -31,6 +31,10 @@ RUN addgroup -S ymmo && adduser -S ymmo -G ymmo
 WORKDIR /app
 COPY --from=builder /ymmo-api /app/ymmo-api
 
+# Upload directory for property photos. Created and owned by the non-root user
+# so a fresh Docker volume mounted here inherits writable ownership.
+RUN mkdir -p /app/uploads && chown -R ymmo:ymmo /app/uploads
+
 USER ymmo
 EXPOSE 8080
 
