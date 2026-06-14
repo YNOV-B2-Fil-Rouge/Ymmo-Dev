@@ -104,8 +104,8 @@ services:
     networks:
       - front_api
     ports:
-      # Browse the app at http://localhost:3000
-      - "3001:80"
+      # Browse the app at http://localhost
+      - "80:80"
 
 volumes:
   db_data:

@@ -37,7 +37,7 @@ Part of the project's `docker-compose.yml`. From the **project root**:
 ```bash
 docker compose up -d --build frontend
 ```
-The interface is served on **http://localhost:3001**.
+The interface is served on **http://localhost**.
 
 > ⚠️ nginx serves the files frozen at build time. After changing a page, rebuild with `docker compose up -d --build frontend` and hard-refresh (Ctrl+Shift+R).
 
@@ -62,7 +62,7 @@ The browser hits the Go API directly on the published port `8080`.
 ## 🐳 Docker Architecture
 - Base image **`nginx:1.27-alpine`** (lightweight, reduced attack surface).
 - Build copies only the `*.html` pages and the `js/` folder into the web root; the custom `nginx.conf` handles multi-page routing.
-- Published on host port **3001** (`3001:80`).
+- Published on host port **80** (`80:80`).
 
 ## 🎨 Design & Accessibility
 - **Charte graphique** tokens (shared Tailwind config in `js/tailwind-config.js`): `midnight #2c3e50`, `alyssum #efebe7`, `hibiscus #b63753`, `slate2`, `gold`.

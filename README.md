@@ -67,7 +67,7 @@ This builds and starts the four services together:
 
 | Service | Container | URL |
 |---|---|---|
-| Front-end | `ymmo-front` | http://localhost:3000 |
+| Front-end | `ymmo-front` | http://localhost |
 | API (Go) | `ymmo-api` | http://localhost:8080/api/v1 |
 | Swagger UI | `ymmo-api` | http://localhost:8080/swagger/index.html |
 | Health check | `ymmo-api` | http://localhost:8080/health |
@@ -130,7 +130,7 @@ Defined in `docker-compose.yml`:
 1. `db` : `mariadb:11.4`, init scripts mounted in `/docker-entrypoint-initdb.d`, healthcheck.
 2. `api` : multi-stage build (`golang:1.22-alpine` → `alpine:3.20`), runs `swag init` at build time, serves the REST API on `8080`, stores uploaded photos in a volume.
 3. `ai` : `python:3.12-slim`, FastAPI/uvicorn, **only `expose: 8000`** (no host port → internal network only).
-4. `frontend` : `nginx:1.27-alpine` serving the static files on `3000`.
+4. `frontend` : `nginx:1.27-alpine` serving the static files on `80`.
 
 ### 🛡️ Applied Hardening
 - **Non-root** users in the API and AI images (`ymmo`), and nginx runs as its own user.
