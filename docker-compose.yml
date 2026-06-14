@@ -56,9 +56,11 @@ services:
       DB_NAME: ${DB_NAME}
       # Internal URL of the Python AI service (proxied via /api/v1/ai/*).
       AI_BASE_URL: http://ai:8000
-      # Property photo uploads: on-disk dir (a volume) + public URL to build links.
+      # Property photo uploads: on-disk dir (a volume). PUBLIC_API_URL is left
+      # empty so photo links are relative ("/uploads/...") and served same-origin
+      # through the front nginx proxy. Set it only if the API runs on another host.
       UPLOAD_DIR: /app/uploads
-      PUBLIC_API_URL: ${PUBLIC_API_URL:-http://localhost:8080}
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-}
     volumes:
       - uploads:/app/uploads
     networks:

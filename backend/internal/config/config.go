@@ -43,7 +43,10 @@ func Load() (*Config, error) {
 		JWTSecret: os.Getenv("JWT_SECRET"),
 		AIBaseURL: getEnv("AI_BASE_URL", "http://ai:8000"),
 		UploadDir: getEnv("UPLOAD_DIR", "/app/uploads"),
-		PublicURL: getEnv("PUBLIC_API_URL", "http://localhost:8080"),
+		// Empty by default => photo URLs are relative ("/uploads/..."), served
+		// same-origin through the front nginx proxy. Set PUBLIC_API_URL only if
+		// the API is reached on a different host than the front-end.
+		PublicURL: getEnv("PUBLIC_API_URL", ""),
 		DB: DBConfig{
 			Host:     getEnv("DB_HOST", "127.0.0.1"),
 			Port:     getEnv("DB_PORT", "3306"),

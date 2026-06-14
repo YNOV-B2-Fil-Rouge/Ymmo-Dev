@@ -1,5 +1,7 @@
-// Front-end configuration (API base URLs).
+// Front-end configuration.
+// The API is reached on the SAME origin: nginx reverse-proxies /api, /uploads,
+// /health and /swagger to the Go container. This avoids hard-coding a host and
+// removes the need for CORS (works identically in dev and on a server).
 export const CONFIG = {
-  API_BASE: "http://localhost:8080/api/v1", // Go API
-  AI_BASE: "http://localhost:8000", // Python AI service
+  API_BASE: "/api/v1",
 };
