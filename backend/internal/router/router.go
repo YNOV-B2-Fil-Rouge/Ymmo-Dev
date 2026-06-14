@@ -100,6 +100,10 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 	saleService := services.NewSaleService(saleRepo, propertyRepo, userRepo)
 	saleHandler := handlers.NewSaleHandler(saleService)
 
+	sellerAppRepo := repositories.NewSellerApplicationRepository(db)
+	sellerAppService := services.NewSellerApplicationService(sellerAppRepo, userRepo, roleRepo)
+	sellerAppHandler := handlers.NewSellerApplicationHandler(sellerAppService)
+
 	// --- Versioned API ---
 	api := r.Group("/api/v1")
 	{
@@ -175,6 +179,20 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			mgmt.GET("/collaborators", middleware.RequireRole("DIRECTOR", "HQ", "IT"), userHandler.ListCollaborators)
 			mgmt.GET("/users", middleware.RequireRole("IT", "HQ"), userHandler.ListAll)
 			mgmt.GET("/permissions", middleware.RequireRole("IT", "HQ"), permissionHandler.GetMatrix)
+
+			// Seller applications to review (agent/director/HQ).
+			staffReview := middleware.RequireRole("AGENT", "DIRECTOR", "HQ")
+			mgmt.GET("/seller-applications", staffReview, sellerAppHandler.ListPending)
+			mgmt.POST("/seller-applications/:id/approve", staffReview, sellerAppHandler.Approve)
+			mgmt.POST("/seller-applications/:id/reject", staffReview, sellerAppHandler.Reject)
+		}
+
+		// Become-seller requests: a buyer applies; an agent approves (above).
+		sellerApps := api.Group("/seller-applications")
+		sellerApps.Use(middleware.Auth(cfg.JWTSecret))
+		{
+			sellerApps.POST("", sellerAppHandler.Apply)
+			sellerApps.GET("", sellerAppHandler.Mine)
 		}
 
 		// AI proxy: the browser talks to the Go API, which relays to the

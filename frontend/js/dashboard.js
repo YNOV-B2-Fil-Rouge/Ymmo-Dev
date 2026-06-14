@@ -24,6 +24,7 @@ const panels = {
   overview: document.getElementById("panel-overview"),
   biens: document.getElementById("panel-biens"),
   valider: document.getElementById("panel-valider"),
+  vendeurs: document.getElementById("panel-vendeurs"),
   planning: document.getElementById("panel-planning"),
   ventes: document.getElementById("panel-ventes"),
 };
@@ -373,9 +374,51 @@ async function loadPending() {
   }
 }
 
+// ----- Become-seller applications -----
+function sellerAppItem(a) {
+  const u = a.user || {};
+  const name = `${escapeHtml(u.first_name || "")} ${escapeHtml(u.last_name || "")}`.trim() || `Utilisateur #${a.user_id}`;
+  const motivation = a.motivation ? `<p class="text-sm text-slate2 mt-1 italic">« ${escapeHtml(a.motivation)} »</p>` : "";
+  return `
+    <li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="font-semibold">${name}</p>
+        <p class="text-sm text-slate2">${escapeHtml(u.email || "")}</p>
+        ${motivation}
+      </div>
+      <div class="flex items-center gap-2">
+        <button data-approve="${a.id}" class="seller-approve text-sm font-medium bg-hibiscus hover:bg-hibiscus/90 text-white px-3 py-1.5 rounded-md transition-colors">Approuver</button>
+        <button data-reject="${a.id}" class="seller-reject text-sm font-medium border border-slate2 text-slate2 hover:bg-slate2 hover:text-white px-3 py-1.5 rounded-md transition-colors">Refuser</button>
+      </div>
+    </li>`;
+}
+
+async function loadSellerApps() {
+  const list = document.getElementById("sellers-list");
+  try {
+    const { data } = await api.pendingSellerApplications();
+    list.innerHTML = data.map(sellerAppItem).join("");
+    document.getElementById("sellers-empty").classList.toggle("hidden", data.length > 0);
+
+    const review = (id, approve) => async () => {
+      try {
+        await (approve ? api.approveSellerApplication(id) : api.rejectSellerApplication(id));
+        loadSellerApps();
+      } catch {
+        alert("Action impossible.");
+      }
+    };
+    list.querySelectorAll(".seller-approve").forEach((b) => b.addEventListener("click", review(b.dataset.approve, true)));
+    list.querySelectorAll(".seller-reject").forEach((b) => b.addEventListener("click", review(b.dataset.reject, false)));
+  } catch {
+    list.innerHTML = `<li class="text-slate2">Impossible de charger les demandes.</li>`;
+  }
+}
+
 // ----- Boot -----
 loadProperties();
 loadKpis();
 loadPlanning();
 loadSales();
 loadPending();
+loadSellerApps();

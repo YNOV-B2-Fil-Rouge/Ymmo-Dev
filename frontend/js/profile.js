@@ -202,6 +202,67 @@ async function loadAlerts() {
 
 loadVisits();
 loadAlerts();
+renderSellerCta();
+
+// ---------- Become a seller (buyers only) ----------
+async function renderSellerCta() {
+  if (user.role !== "BUYER") return; // sellers/staff don't see this
+  const box = document.getElementById("seller-cta");
+  box.classList.remove("hidden");
+
+  let app = null;
+  try {
+    const res = await api.mySellerApplication();
+    app = res.data; // may be null
+  } catch {
+    /* treat as no application */
+  }
+
+  // Pending or approved: just show the status.
+  if (app && app.status === "PENDING") {
+    box.innerHTML = `
+      <p class="font-semibold text-gold">Demande pour devenir vendeur</p>
+      <p class="text-sm text-slate2 mt-1">Votre demande est en cours d'examen par un agent.</p>`;
+    return;
+  }
+  if (app && app.status === "APPROVED") {
+    box.innerHTML = `
+      <p class="font-semibold text-green-700">Demande approuvée 🎉</p>
+      <p class="text-sm text-slate2 mt-1">Déconnectez-vous puis reconnectez-vous pour activer votre compte vendeur et publier des annonces.</p>`;
+    return;
+  }
+
+  // No application yet, or a previous one was rejected: show the form.
+  const rejected = app && app.status === "REJECTED";
+  box.innerHTML = `
+    <p class="font-semibold">Devenir vendeur</p>
+    <p class="text-sm text-slate2 mt-1">Proposez vos biens à la vente. Votre demande sera validée par un agent.</p>
+    ${rejected ? `<p class="text-sm text-hibiscus mt-1">Votre précédente demande a été refusée. Vous pouvez en soumettre une nouvelle.</p>` : ""}
+    <textarea id="seller-motivation" rows="2" maxlength="500" placeholder="Quelques mots sur votre projet (optionnel)"
+      class="mt-3 w-full rounded-md border border-hibiscus/60 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30"></textarea>
+    <button id="seller-apply" class="mt-2 bg-hibiscus hover:bg-hibiscus/90 text-white text-sm font-medium px-5 py-2 rounded-md transition-colors">
+      Demander à devenir vendeur
+    </button>
+    <p id="seller-apply-msg" class="hidden mt-2 text-sm"></p>`;
+
+  document.getElementById("seller-apply").addEventListener("click", async () => {
+    const btn = document.getElementById("seller-apply");
+    const msg = document.getElementById("seller-apply-msg");
+    const motivation = document.getElementById("seller-motivation").value.trim();
+    btn.disabled = true;
+    try {
+      await api.applyAsSeller(motivation ? { motivation } : {});
+      renderSellerCta(); // re-render into the "pending" state
+    } catch (err) {
+      msg.textContent =
+        err.status === 409 ? "Vous avez déjà une demande en cours."
+        : err.status === 403 ? "Seuls les acheteurs peuvent faire cette demande."
+        : "Envoi impossible pour le moment.";
+      msg.className = "mt-2 text-sm text-hibiscus";
+      btn.disabled = false;
+    }
+  });
+}
 
 // Refresh the account from the server (also validates the token: a 401 means
 // the session expired, so we send the user back to the login page).

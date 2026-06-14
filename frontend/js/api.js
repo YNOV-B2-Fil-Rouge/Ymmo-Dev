@@ -60,6 +60,13 @@ export const api = {
   pendingProperties: () => request("/management/pending-properties", { auth: true }),
   validateProperty: (id) => request(`/properties/${id}/validate`, { method: "POST", auth: true }),
 
+  // --- Become-seller applications ---
+  applyAsSeller: (payload) => request("/seller-applications", { method: "POST", body: payload, auth: true }),
+  mySellerApplication: () => request("/seller-applications", { auth: true }),
+  pendingSellerApplications: () => request("/management/seller-applications", { auth: true }),
+  approveSellerApplication: (id) => request(`/management/seller-applications/${id}/approve`, { method: "POST", auth: true }),
+  rejectSellerApplication: (id) => request(`/management/seller-applications/${id}/reject`, { method: "POST", auth: true }),
+
   // --- IT administration ---
   allUsers: () => request("/management/users", { auth: true }),
   permissionsMatrix: () => request("/management/permissions", { auth: true }),

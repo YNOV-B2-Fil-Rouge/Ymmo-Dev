@@ -313,6 +313,25 @@ CREATE TABLE price_history (
   UNIQUE KEY uq_history (city, category_id, period)
 ) ENGINE=InnoDB;
 
+-- ---------------------------------------------------------------------
+-- 13. SELLER APPLICATIONS
+--     A buyer applies to become a seller; an agent reviews & approves.
+--     Approval promotes the user's role from BUYER to SELLER.
+-- ---------------------------------------------------------------------
+CREATE TABLE seller_applications (
+  id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id     INT UNSIGNED NOT NULL,
+  status      ENUM('PENDING','APPROVED','REJECTED') NOT NULL DEFAULT 'PENDING',
+  motivation  VARCHAR(500) NULL,
+  reviewed_by INT UNSIGNED NULL,                 -- agent who reviewed it
+  created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  reviewed_at TIMESTAMP NULL,
+  CONSTRAINT fk_sa_user     FOREIGN KEY (user_id)     REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_sa_reviewer FOREIGN KEY (reviewed_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX idx_sa_status (status),
+  INDEX idx_sa_user (user_id)
+) ENGINE=InnoDB;
+
 -- =====================================================================
 --  MINIMAL REFERENCE DATA (SEED)
 -- =====================================================================

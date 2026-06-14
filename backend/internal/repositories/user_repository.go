@@ -50,6 +50,14 @@ func (r *UserRepository) FindByID(id uint) (*models.User, error) {
 	return &user, nil
 }
 
+// UpdateRole changes a user's role (used to promote a buyer to seller after an
+// agent approves their application).
+func (r *UserRepository) UpdateRole(userID uint, roleID uint8) error {
+	return r.db.Model(&models.User{}).
+		Where("id = ?", userID).
+		Update("role_id", roleID).Error
+}
+
 // ListInternal returns the company's internal staff (the collaborator
 // directory), with their role preloaded.
 func (r *UserRepository) ListInternal() ([]models.User, error) {

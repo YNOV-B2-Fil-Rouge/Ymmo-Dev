@@ -46,6 +46,7 @@
           <button data-tab="overview" class="dash-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">Dashboard</button>
           <button data-tab="biens" class="dash-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">Mes biens</button>
           <button data-tab="valider" class="dash-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">Biens à valider</button>
+          <button data-tab="vendeurs" class="dash-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">Demandes vendeur</button>
           <button data-tab="planning" class="dash-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">Planning</button>
           <button data-tab="ventes" class="dash-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">Dossiers de vente</button>
           <a href="./messages.html" class="block w-full text-center border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg hover:bg-hibiscus hover:text-white transition-colors">Messagerie</a>
@@ -76,6 +77,14 @@
           <p class="text-slate2 mb-6">Annonces proposées par des vendeurs. Valider une annonce vous l'assigne et la publie.</p>
           <div id="pending-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
           <p id="pending-empty" class="hidden text-slate2">Aucun bien en attente de validation.</p>
+        </div>
+
+        <!-- Become-seller applications -->
+        <div id="panel-vendeurs" class="panel hidden">
+          <h2 class="text-2xl font-bold mb-6">Demandes pour devenir vendeur</h2>
+          <p class="text-slate2 mb-6">Approuver une demande promeut l'acheteur en vendeur (il pourra proposer des biens).</p>
+          <ul id="sellers-list" class="space-y-3"></ul>
+          <p id="sellers-empty" class="hidden text-slate2">Aucune demande en attente.</p>
         </div>
 
         <!-- Planning -->
