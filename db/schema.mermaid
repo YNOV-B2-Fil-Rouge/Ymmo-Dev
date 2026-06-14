@@ -1,0 +1,249 @@
+erDiagram
+    departments {
+        TINYINT id PK
+        VARCHAR name UK
+        VARCHAR description
+    }
+
+    roles {
+        TINYINT id PK
+        VARCHAR code UK
+        VARCHAR label
+        BOOLEAN is_internal
+    }
+
+    property_categories {
+        TINYINT id PK
+        ENUM sector
+        VARCHAR label UK
+    }
+
+    agencies {
+        SMALLINT id PK
+        VARCHAR name
+        VARCHAR city
+        VARCHAR address
+        VARCHAR postal_code
+        VARCHAR phone
+        VARCHAR email
+        BOOLEAN is_hq
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    users {
+        INT id PK
+        VARCHAR email UK
+        VARCHAR password_hash
+        VARCHAR last_name
+        VARCHAR first_name
+        VARCHAR phone
+        TINYINT role_id FK
+        TINYINT department_id FK
+        SMALLINT agency_id FK
+        BOOLEAN is_active
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    department_permissions {
+        TINYINT requester_department_id PK,FK
+        TINYINT target_department_id PK,FK
+        ENUM access_level
+    }
+
+    properties {
+        INT id PK
+        VARCHAR reference UK
+        VARCHAR title
+        TEXT description
+        TINYINT category_id FK
+        ENUM status
+        DECIMAL price
+        DECIMAL area
+        TINYINT rooms
+        TINYINT bedrooms
+        TINYINT bathrooms
+        TINYINT floor
+        SMALLINT build_year
+        ENUM energy_rating
+        ENUM ghg_rating
+        VARCHAR address
+        VARCHAR city
+        VARCHAR postal_code
+        DECIMAL latitude
+        DECIMAL longitude
+        BOOLEAN is_exclusive
+        INT view_count
+        SMALLINT agency_id FK
+        INT agent_id FK
+        INT seller_id FK
+        INT approved_by FK
+        TIMESTAMP approved_at
+        TIMESTAMP published_at
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    property_photos {
+        INT id PK
+        INT property_id FK
+        VARCHAR url
+        TINYINT sort_order
+        BOOLEAN is_primary
+    }
+
+    favorites {
+        INT user_id PK,FK
+        INT property_id PK,FK
+        TIMESTAMP created_at
+    }
+
+    alerts {
+        INT id PK
+        INT user_id FK
+        VARCHAR city
+        TINYINT category_id FK
+        DECIMAL min_price
+        DECIMAL max_price
+        DECIMAL min_area
+        ENUM max_energy
+        BOOLEAN is_active
+        TIMESTAMP created_at
+    }
+
+    conversations {
+        INT id PK
+        INT property_id FK
+        INT client_id FK
+        INT agent_id FK
+        BOOLEAN client_deleted
+        BOOLEAN agent_deleted
+        TIMESTAMP created_at
+    }
+
+    messages {
+        INT id PK
+        INT conversation_id FK
+        INT sender_id FK
+        TEXT body
+        BOOLEAN is_read
+        TIMESTAMP created_at
+    }
+
+    visits {
+        INT id PK
+        INT property_id FK
+        INT client_id FK
+        INT agent_id FK
+        DATETIME scheduled_at
+        ENUM status
+        VARCHAR notes
+        TIMESTAMP created_at
+    }
+
+    meetings {
+        INT id PK
+        SMALLINT agency_id FK
+        INT organizer_id FK
+        VARCHAR title
+        TEXT description
+        DATETIME start_at
+        DATETIME end_at
+        VARCHAR location
+        TIMESTAMP created_at
+    }
+
+    meeting_participants {
+        INT meeting_id PK,FK
+        INT user_id PK,FK
+    }
+
+    sale_files {
+        INT id PK
+        INT property_id FK
+        INT buyer_id FK
+        INT agent_id FK
+        ENUM status
+        DECIMAL negotiated_price
+        DATE offer_date
+        DATE contract_date
+        DATE deed_date
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    property_views {
+        BIGINT id PK
+        INT property_id FK
+        INT user_id FK
+        TIMESTAMP created_at
+    }
+
+    price_history {
+        INT id PK
+        VARCHAR city
+        TINYINT category_id FK
+        DECIMAL avg_price_per_m2
+        INT sales_count
+        DATE period
+    }
+
+    seller_applications {
+        INT id PK
+        INT user_id FK
+        ENUM status
+        VARCHAR motivation
+        INT reviewed_by FK
+        TIMESTAMP created_at
+        TIMESTAMP reviewed_at
+    }
+
+    %% ----- Relationships -----
+    roles                ||--o{ users : "role"
+    departments          ||--o{ users : "department"
+    agencies             ||--o{ users : "agency"
+
+    departments          ||--o{ department_permissions : "requester"
+    departments          ||--o{ department_permissions : "target"
+
+    property_categories  ||--o{ properties : "category"
+    agencies             ||--o{ properties : "agency"
+    users                ||--o{ properties : "agent"
+    users                ||--o{ properties : "seller"
+    users                ||--o{ properties : "approves"
+
+    properties           ||--o{ property_photos : "photos"
+
+    users                ||--o{ favorites : "saves"
+    properties           ||--o{ favorites : "favorited"
+
+    users                ||--o{ alerts : "owns"
+    property_categories  ||--o{ alerts : "category"
+
+    properties           ||--o{ conversations : "about"
+    users                ||--o{ conversations : "client"
+    users                ||--o{ conversations : "agent"
+    conversations        ||--o{ messages : "contains"
+    users                ||--o{ messages : "sends"
+
+    properties           ||--o{ visits : "visited"
+    users                ||--o{ visits : "client"
+    users                ||--o{ visits : "agent"
+
+    agencies             ||--o{ meetings : "agency"
+    users                ||--o{ meetings : "organizes"
+    meetings             ||--o{ meeting_participants : "has"
+    users                ||--o{ meeting_participants : "attends"
+
+    properties           ||--o{ sale_files : "transaction"
+    users                ||--o{ sale_files : "buyer"
+    users                ||--o{ sale_files : "agent"
+
+    properties           ||--o{ property_views : "viewed"
+    users                ||--o{ property_views : "viewer"
+
+    property_categories  ||--o{ price_history : "category"
+
+    users                ||--o{ seller_applications : "applicant"
+    users                ||--o{ seller_applications : "reviewer"

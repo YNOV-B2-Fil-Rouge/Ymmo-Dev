@@ -1,7 +1,9 @@
 -- =====================================================================
---  YMMO — Test/demo seed data
---  Run AFTER schema.sql:  mariadb -u root -p ymmo < seed.sql
---  (or paste into HeidiSQL). Safe to re-run: it clears these tables first.
+--  YMMO — Demo seed data
+--  Loaded automatically by docker compose on first startup
+--  (mounted as /docker-entrypoint-initdb.d/03-seed.sql, after the schema).
+--  Also runnable by hand:  mariadb -u root -p ymmo < seed.sql
+--  Safe to re-run: it clears these tables first.
 --
 --  Test accounts (password in clear here ONLY because this is demo data):
 --    agent@ymmo.fr    / agent1234     (role AGENT)
@@ -9,6 +11,7 @@
 --    buyer@ymmo.fr    / buyer1234     (role BUYER)
 -- =====================================================================
 USE ymmo;
+SET NAMES utf8mb4;  -- preserve accented names (e.g. "Hélène")
 
 -- Reset all demo data. FK checks are disabled so the reset is re-runnable even
 -- after data has been created through the app (conversations, sales, etc.).
