@@ -99,6 +99,15 @@
         <span class="text-sm">Bien en exclusivité YMMO</span>
       </label>
 
+      <!-- Photos chosen at creation time: staged here, uploaded right after the
+           property is created (a photo needs an existing property id). -->
+      <div id="create-photos">
+        <label for="create-photo-files" class="block text-hibiscus font-semibold text-sm mb-1">Photos (optionnel)</label>
+        <input id="create-photo-files" type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif"
+               class="block w-full text-sm text-slate2 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:bg-hibiscus file:text-white file:cursor-pointer hover:file:bg-hibiscus/90" />
+        <p class="text-xs text-slate2 mt-1">La première image sera la photo principale. Vous pourrez en ajouter ou en retirer ensuite.</p>
+      </div>
+
       <p id="form-error" class="hidden text-sm text-hibiscus bg-hibiscus/10 border border-hibiscus/30 rounded-md px-3 py-2" role="alert"></p>
 
       <div class="flex items-center gap-3 pt-2">

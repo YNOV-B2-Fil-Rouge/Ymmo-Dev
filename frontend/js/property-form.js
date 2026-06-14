@@ -46,10 +46,12 @@ $("status").innerHTML = STATUSES.map((s) => `<option value="${s.v}">${s.l}</opti
 const form = $("property-form");
 const errorBox = $("form-error");
 
-// For a seller, reframe the page as a submission for validation.
+// For a seller, reframe the page as a submission for validation. Sellers can't
+// upload files (the upload route is staff-only), so hide the photo picker.
 if (isSeller) {
   $("form-title").textContent = "Proposer un bien à la vente";
   $("submit-btn").textContent = "Soumettre pour validation";
+  $("create-photos").classList.add("hidden");
 }
 
 // ---------- Edit mode: prefill ----------
@@ -59,6 +61,7 @@ if (editId) {
   $("status-wrap").classList.remove("hidden");
   $("delete-btn").classList.remove("hidden");
   $("agency-wrap").classList.add("hidden"); // agency isn't editable via the API
+  $("create-photos").classList.add("hidden"); // edit mode uses the photos manager below
 
   api.getProperty(editId).then((p) => {
     $("title").value = p.title || "";
@@ -235,7 +238,22 @@ form.addEventListener("submit", async (e) => {
     } else {
       payload.agency_id = Number($("agency_id").value);
       const created = await api.createProperty(payload); // seller -> PENDING_REVIEW, staff -> DRAFT
-      // Staff land on the new property's edit page to add photos right away;
+
+      // Upload the photos staged in the form to the freshly created property
+      // (the first one becomes the primary). Failures are skipped, not fatal.
+      const files = $("create-photo-files").files;
+      for (let i = 0; i < files.length; i++) {
+        const fd = new FormData();
+        fd.append("file", files[i]);
+        if (i === 0) fd.append("is_primary", "true");
+        try {
+          await api.uploadPhoto(created.id, fd);
+        } catch {
+          /* skip this file */
+        }
+      }
+
+      // Staff land on the new property's edit page (to manage photos further);
       // sellers (who can't edit) go back to their profile.
       window.location.href = isSeller ? "./profile.html" : `./property-form.html?id=${created.id}`;
     }
