@@ -56,6 +56,10 @@ export const api = {
   allProperties: () => request("/management/properties", { auth: true }),
   collaborators: () => request("/management/collaborators", { auth: true }),
 
+  // --- Seller submissions awaiting validation (staff) ---
+  pendingProperties: () => request("/management/pending-properties", { auth: true }),
+  validateProperty: (id) => request(`/properties/${id}/validate`, { method: "POST", auth: true }),
+
   // --- IT administration ---
   allUsers: () => request("/management/users", { auth: true }),
   permissionsMatrix: () => request("/management/permissions", { auth: true }),

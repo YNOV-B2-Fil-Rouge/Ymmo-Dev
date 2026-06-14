@@ -2,12 +2,22 @@
 import { api } from "./api.js";
 import { currentUser, isLoggedIn } from "./auth.js";
 
-// Staff only.
+// Access: staff manage listings; a SELLER may submit a new one (create only).
 const STAFF = ["AGENT", "DIRECTOR", "HQ"];
 const me = currentUser() || {};
-if (!isLoggedIn() || !STAFF.includes(me.role)) {
+const isStaff = STAFF.includes(me.role);
+const isSeller = me.role === "SELLER";
+const editId = new URLSearchParams(window.location.search).get("id");
+
+if (!isLoggedIn() || (!isStaff && !isSeller)) {
   window.location.href = "./index.html";
 }
+// Sellers can only create (no editing existing listings).
+if (isSeller && editId) {
+  window.location.href = "./profile.html";
+}
+// Where to go after a successful submit.
+const afterSubmitHref = isSeller ? "./profile.html" : "./dashboard.html";
 
 // Reference data (fixed seed values). Could come from API endpoints later.
 const CATEGORIES = [
@@ -33,9 +43,14 @@ $("energy_rating").innerHTML = `<option value="">—</option>` + ENERGY.map((e) 
 $("ghg_rating").innerHTML = `<option value="">—</option>` + ENERGY.map((e) => `<option value="${e}">${e}</option>`).join("");
 $("status").innerHTML = STATUSES.map((s) => `<option value="${s.v}">${s.l}</option>`).join("");
 
-const editId = new URLSearchParams(window.location.search).get("id");
 const form = $("property-form");
 const errorBox = $("form-error");
+
+// For a seller, reframe the page as a submission for validation.
+if (isSeller) {
+  $("form-title").textContent = "Proposer un bien à la vente";
+  $("submit-btn").textContent = "Soumettre pour validation";
+}
 
 // ---------- Edit mode: prefill ----------
 if (editId) {
@@ -186,9 +201,9 @@ form.addEventListener("submit", async (e) => {
       await api.updateProperty(editId, payload);
     } else {
       payload.agency_id = Number($("agency_id").value);
-      await api.createProperty(payload);
+      await api.createProperty(payload); // seller -> PENDING_REVIEW, staff -> DRAFT
     }
-    window.location.href = "./dashboard.html";
+    window.location.href = afterSubmitHref;
   } catch (err) {
     showError(err.status === 400 ? "Vérifiez les champs (prix, surface, ville…)." : "Une erreur est survenue.");
     btn.disabled = false;

@@ -23,6 +23,7 @@ const tabs = document.querySelectorAll(".dash-tab");
 const panels = {
   overview: document.getElementById("panel-overview"),
   biens: document.getElementById("panel-biens"),
+  valider: document.getElementById("panel-valider"),
   planning: document.getElementById("panel-planning"),
   ventes: document.getElementById("panel-ventes"),
 };
@@ -330,8 +331,51 @@ saleForm.addEventListener("submit", async (e) => {
   }
 });
 
+// ----- Seller submissions to validate -----
+function pendingCard(p) {
+  const area = p.area != null ? ` - ${p.area} m²` : "";
+  return `
+    <div class="rounded-xl border border-gold/60 bg-white overflow-hidden">
+      <img src="${primaryPhoto(p)}" alt="${escapeHtml(p.title)}" loading="lazy" class="w-full h-40 object-cover" />
+      <div class="p-4">
+        <h3 class="font-semibold">${escapeHtml(p.title)}${area}</h3>
+        <p class="text-sm text-slate2 mt-1">${escapeHtml(p.city)} · ${escapeHtml(p.postal_code)}</p>
+        <p class="text-sm font-semibold text-hibiscus mt-1">${euro.format(p.price)}</p>
+        <button data-validate="${p.id}" class="validate-btn mt-3 w-full bg-hibiscus hover:bg-hibiscus/90 text-white text-sm font-medium py-2 rounded-md transition-colors">
+          Valider et publier
+        </button>
+      </div>
+    </div>`;
+}
+
+async function loadPending() {
+  const grid = document.getElementById("pending-grid");
+  const empty = document.getElementById("pending-empty");
+  try {
+    const { data } = await api.pendingProperties();
+    grid.innerHTML = data.map(pendingCard).join("");
+    empty.classList.toggle("hidden", data.length > 0);
+    grid.querySelectorAll(".validate-btn").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try {
+          await api.validateProperty(btn.dataset.validate);
+          loadPending();
+          loadProperties(); // it's now assigned to me
+        } catch {
+          btn.disabled = false;
+          alert("Validation impossible.");
+        }
+      })
+    );
+  } catch {
+    grid.innerHTML = `<p class="text-slate2">Impossible de charger les biens à valider.</p>`;
+  }
+}
+
 // ----- Boot -----
 loadProperties();
 loadKpis();
 loadPlanning();
 loadSales();
+loadPending();

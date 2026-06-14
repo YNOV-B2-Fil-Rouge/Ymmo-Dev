@@ -123,9 +123,9 @@ func (h *PropertyHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, property)
 }
 
-// Create lists a new property (agent/director/HQ only).
+// Create lists a new property.
 // @Summary      Create a property
-// @Description  Staff only. The new property starts as DRAFT.
+// @Description  Staff create a DRAFT they own; a seller submits a PENDING_REVIEW listing for validation.
 // @Tags         properties
 // @Accept       json
 // @Produce      json
@@ -143,13 +143,69 @@ func (h *PropertyHandler) Create(c *gin.Context) {
 		return
 	}
 
-	agentID := middleware.CurrentUserID(c)
-	property, err := h.svc.Create(req, agentID)
+	creatorID := middleware.CurrentUserID(c)
+	creatorRole := middleware.CurrentRole(c)
+	property, err := h.svc.Create(req, creatorID, creatorRole)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create property"})
 		return
 	}
 	c.JSON(http.StatusCreated, property)
+}
+
+// ListPending returns seller submissions awaiting validation (staff only).
+// @Summary      List properties awaiting validation
+// @Description  Seller submissions in PENDING_REVIEW. Scoped to the staff member's agency (HQ sees all).
+// @Tags         properties
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Router       /management/pending-properties [get]
+func (h *PropertyHandler) ListPending(c *gin.Context) {
+	userID := middleware.CurrentUserID(c)
+	role := middleware.CurrentRole(c)
+	items, err := h.svc.ListPending(userID, role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not fetch pending properties"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": items})
+}
+
+// Validate approves a seller submission (staff only): the reviewing agent
+// becomes the assigned agent and the property goes live.
+// @Summary      Validate a seller submission
+// @Tags         properties
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      int  true  "Property id"
+// @Success      200  {object}  models.Property
+// @Failure      400  {object}  map[string]string
+// @Failure      401  {object}  map[string]string
+// @Failure      403  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Router       /properties/{id}/validate [post]
+func (h *PropertyHandler) Validate(c *gin.Context) {
+	id, ok := parseID(c)
+	if !ok {
+		return
+	}
+	agentID := middleware.CurrentUserID(c)
+	property, err := h.svc.Validate(id, agentID)
+	if err != nil {
+		switch {
+		case errors.Is(err, services.ErrPropertyNotFound):
+			c.JSON(http.StatusNotFound, gin.H{"error": "property not found"})
+		case errors.Is(err, services.ErrNotPendingReview):
+			c.JSON(http.StatusBadRequest, gin.H{"error": "this property is not awaiting validation"})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not validate property"})
+		}
+		return
+	}
+	c.JSON(http.StatusOK, property)
 }
 
 // Update applies a partial change to a property.

@@ -96,6 +96,23 @@ func (r *PropertyRepository) ListAll() ([]models.Property, error) {
 	return properties, err
 }
 
+// ListPending returns the properties awaiting an agent's validation
+// (status PENDING_REVIEW), optionally scoped to a single agency. Used by the
+// seller-submission workflow: a seller publishes, an agent reviews & validates.
+func (r *PropertyRepository) ListPending(agencyID *uint16) ([]models.Property, error) {
+	var properties []models.Property
+	q := r.db.
+		Where("status = ?", models.PropertyStatusPendingReview).
+		Preload("Category").
+		Preload("Photos").
+		Order("created_at DESC")
+	if agencyID != nil {
+		q = q.Where("agency_id = ?", *agencyID)
+	}
+	err := q.Find(&properties).Error
+	return properties, err
+}
+
 // IncrementViewCount bumps the fast popularity counter by one.
 func (r *PropertyRepository) IncrementViewCount(id uint) error {
 	return r.db.Model(&models.Property{}).Where("id = ?", id).

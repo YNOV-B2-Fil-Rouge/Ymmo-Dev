@@ -128,6 +128,14 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			// Request a visit of this property.
 			properties.POST("/:id/visits", middleware.Auth(cfg.JWTSecret), visitHandler.Request)
 
+			// Create a listing: staff create a DRAFT they own; a SELLER submits
+			// a PENDING_REVIEW listing that an agent validates afterwards.
+			properties.POST("",
+				middleware.Auth(cfg.JWTSecret),
+				middleware.RequireRole("AGENT", "DIRECTOR", "HQ", "SELLER"),
+				propertyHandler.Create,
+			)
+
 			// Management: staff only (valid token + internal role).
 			staff := properties.Group("")
 			staff.Use(
@@ -135,9 +143,11 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 				middleware.RequireRole("AGENT", "DIRECTOR", "HQ"),
 			)
 			{
-				staff.POST("", propertyHandler.Create)
 				staff.PUT("/:id", propertyHandler.Update)
 				staff.DELETE("/:id", propertyHandler.Delete)
+
+				// Approve a seller submission (assign agent + publish).
+				staff.POST("/:id/validate", propertyHandler.Validate)
 
 				// Photo management for a property.
 				staff.POST("/:id/photos", photoHandler.Add)
@@ -161,6 +171,7 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 		mgmt.Use(middleware.Auth(cfg.JWTSecret))
 		{
 			mgmt.GET("/properties", middleware.RequireRole("DIRECTOR", "HQ"), propertyHandler.ListAll)
+			mgmt.GET("/pending-properties", middleware.RequireRole("AGENT", "DIRECTOR", "HQ"), propertyHandler.ListPending)
 			mgmt.GET("/collaborators", middleware.RequireRole("DIRECTOR", "HQ", "IT"), userHandler.ListCollaborators)
 			mgmt.GET("/users", middleware.RequireRole("IT", "HQ"), userHandler.ListAll)
 			mgmt.GET("/permissions", middleware.RequireRole("IT", "HQ"), permissionHandler.GetMatrix)
