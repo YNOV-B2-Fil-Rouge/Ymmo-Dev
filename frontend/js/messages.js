@@ -75,10 +75,21 @@ async function openConversation(conv) {
 
   const { name, role } = otherParty(conv);
   const property = propertyLabel(conv);
-  header.innerHTML = `<span>${escapeHtml(name)} ( ${role} )</span>${property ? `<span class="block text-sm font-normal text-slate2">${escapeHtml(property)}</span>` : ""}`;
+  header.classList.add("flex", "items-center", "justify-between", "gap-4");
+  header.innerHTML = `
+    <div>
+      <span>${escapeHtml(name)} ( ${role} )</span>
+      ${property ? `<span class="block text-sm font-normal text-slate2">${escapeHtml(property)}</span>` : ""}
+    </div>
+    <button id="conv-delete" class="shrink-0 text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-3 py-1.5 rounded-md transition-colors">
+      Supprimer
+    </button>`;
   header.classList.remove("hidden");
   sendForm.classList.remove("hidden");
   placeholder.classList.add("hidden");
+
+  // Delete this conversation (only a participant may; the API enforces it).
+  document.getElementById("conv-delete").addEventListener("click", () => deleteConversation(conv));
 
   // Re-render the list to move the highlight.
   renderList(conversations);
@@ -92,6 +103,43 @@ async function openConversation(conv) {
     messagesEl.scrollTop = messagesEl.scrollHeight;
   } catch {
     messagesEl.innerHTML = `<p class="text-slate2 text-center mt-10">Impossible de charger les messages.</p>`;
+  }
+}
+
+// ----- Delete a conversation -----
+async function deleteConversation(conv) {
+  if (!confirm("Supprimer cette conversation ?")) return;
+  try {
+    await api.deleteConversation(conv.id);
+    conversations = conversations.filter((c) => c.id !== conv.id);
+    activeId = null;
+    renderList(conversations);
+    if (conversations.length) {
+      openConversation(conversations[0]);
+    } else {
+      header.classList.add("hidden");
+      sendForm.classList.add("hidden");
+      messagesEl.innerHTML = "";
+      placeholder.classList.remove("hidden");
+    }
+  } catch {
+    alert("Suppression impossible pour le moment.");
+  }
+}
+
+// ----- Unread badge -----
+async function refreshUnread() {
+  const badge = document.getElementById("unread-badge");
+  try {
+    const { unread } = await api.unreadCount();
+    if (unread > 0) {
+      badge.textContent = `${unread} message${unread > 1 ? "s" : ""} non lu${unread > 1 ? "s" : ""}`;
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+  } catch {
+    /* ignore */
   }
 }
 
@@ -123,6 +171,7 @@ list.addEventListener("click", (e) => {
 });
 
 async function loadConversations() {
+  refreshUnread();
   try {
     const { data } = await api.listConversations();
     conversations = data;

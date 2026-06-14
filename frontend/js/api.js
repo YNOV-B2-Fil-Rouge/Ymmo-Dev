@@ -60,9 +60,30 @@ export const api = {
   allUsers: () => request("/management/users", { auth: true }),
   permissionsMatrix: () => request("/management/permissions", { auth: true }),
 
-  // --- Planning ---
+  // --- Photos (staff) ---
+  addPhoto: (id, payload) => request(`/properties/${id}/photos`, { method: "POST", body: payload, auth: true }),
+  deletePhoto: (id, photoId) => request(`/properties/${id}/photos/${photoId}`, { method: "DELETE", auth: true }),
+
+  // --- Visits / Planning ---
+  requestVisit: (id, payload) => request(`/properties/${id}/visits`, { method: "POST", body: payload, auth: true }),
   listVisits: () => request("/visits", { auth: true }),
+  updateVisit: (id, status) => request(`/visits/${id}`, { method: "PATCH", body: { status }, auth: true }),
+
+  // --- Meetings ---
   listMeetings: () => request("/meetings", { auth: true }),
+  createMeeting: (payload) => request("/meetings", { method: "POST", body: payload, auth: true }),
+  deleteMeeting: (id) => request(`/meetings/${id}`, { method: "DELETE", auth: true }),
+
+  // --- Alerts (saved searches) ---
+  listAlerts: () => request("/alerts", { auth: true }),
+  createAlert: (payload) => request("/alerts", { method: "POST", body: payload, auth: true }),
+  deleteAlert: (id) => request(`/alerts/${id}`, { method: "DELETE", auth: true }),
+
+  // --- Sale files ---
+  listSales: () => request("/sales", { auth: true }),
+  getSale: (id) => request(`/sales/${id}`, { auth: true }),
+  createSale: (payload) => request("/sales", { method: "POST", body: payload, auth: true }),
+  updateSale: (id, payload) => request(`/sales/${id}`, { method: "PATCH", body: payload, auth: true }),
 
   // --- Favorites ---
   listFavorites: () => request("/favorites", { auth: true }),
@@ -72,9 +93,13 @@ export const api = {
   // --- Messaging ---
   startConversation: (payload) => request("/conversations", { method: "POST", body: payload, auth: true }),
   listConversations: () => request("/conversations", { auth: true }),
+  deleteConversation: (id) => request(`/conversations/${id}`, { method: "DELETE", auth: true }),
   getMessages: (id) => request(`/conversations/${id}/messages`, { auth: true }),
   sendMessage: (id, body) => request(`/conversations/${id}/messages`, { method: "POST", body: { body }, auth: true }),
   unreadCount: () => request("/messages/unread-count", { auth: true }),
+
+  // --- Infra / monitoring ---
+  ping: () => request("/ping"),
 };
 
 // ----- Data/AI: proxied through the Go API (/ai/...) -----

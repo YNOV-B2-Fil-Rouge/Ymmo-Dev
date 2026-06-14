@@ -61,6 +61,18 @@
         <div id="panel-monitoring" class="panel hidden">
           <h2 class="text-2xl font-bold mb-6">Monitoring</h2>
           <div id="monitoring-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+
+          <h3 class="font-semibold text-hibiscus mt-8 mb-3">Liens techniques</h3>
+          <div class="flex flex-wrap gap-3">
+            <a id="swagger-link" href="#" target="_blank" rel="noopener"
+               class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-2 rounded-md transition-colors">
+              Documentation API (Swagger UI)
+            </a>
+            <button id="ping-btn" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-2 rounded-md transition-colors">
+              Tester l'API (/ping)
+            </button>
+            <span id="ping-result" class="text-sm self-center"></span>
+          </div>
         </div>
 
         <div id="panel-annuaire" class="panel hidden">

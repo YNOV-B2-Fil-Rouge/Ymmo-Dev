@@ -34,6 +34,8 @@ document.getElementById("logout-btn").addEventListener("click", () => {
 const tabs = document.querySelectorAll(".profile-tab");
 const panels = {
   biens: document.getElementById("panel-biens"),
+  visites: document.getElementById("panel-visites"),
+  alertes: document.getElementById("panel-alertes"),
   favoris: document.getElementById("panel-favoris"),
   settings: document.getElementById("panel-settings"),
 };
@@ -94,3 +96,123 @@ async function loadFavorites() {
 }
 
 loadFavorites();
+
+// ---------- My visits (request, then cancel here) ----------
+const dateFmt = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" });
+const VISIT_STATUS = {
+  REQUESTED: ["Demandée", "bg-gold/20 text-gold"],
+  CONFIRMED: ["Confirmée", "bg-green-100 text-green-700"],
+  CANCELLED: ["Annulée", "bg-slate2/20 text-slate2"],
+  COMPLETED: ["Terminée", "bg-hibiscus/15 text-hibiscus"],
+};
+
+function visitItem(v) {
+  const [label, cls] = VISIT_STATUS[v.status] || [v.status, "bg-slate2/20 text-slate2"];
+  // A client may cancel a visit that is still open.
+  const cancellable = v.status === "REQUESTED" || v.status === "CONFIRMED";
+  return `
+    <li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex items-center justify-between gap-4">
+      <div>
+        <p class="font-semibold">Bien #${v.property_id}</p>
+        <p class="text-sm text-slate2">${dateFmt.format(new Date(v.scheduled_at))}</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${cls}">${label}</span>
+        ${cancellable ? `<button data-visit="${v.id}" class="visit-cancel text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-3 py-1.5 rounded-md transition-colors">Annuler</button>` : ""}
+      </div>
+    </li>`;
+}
+
+async function loadVisits() {
+  const list = document.getElementById("visites-list");
+  const empty = document.getElementById("visites-empty");
+  try {
+    const { data } = await api.listVisits();
+    document.getElementById("count-visites").textContent = data.length;
+    list.innerHTML = data.map(visitItem).join("");
+    empty.classList.toggle("hidden", data.length > 0);
+
+    list.querySelectorAll(".visit-cancel").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try {
+          await api.updateVisit(btn.dataset.visit, "CANCELLED");
+          loadVisits();
+        } catch {
+          btn.disabled = false;
+          alert("Annulation impossible.");
+        }
+      })
+    );
+  } catch {
+    list.innerHTML = `<li class="text-slate2">Impossible de charger vos visites.</li>`;
+  }
+}
+
+// ---------- My alerts (created from the search page) ----------
+const CATEGORY_LABELS = {
+  1: "Maison", 2: "Appartement", 3: "Studio", 4: "Terrain", 5: "Bureau", 6: "Local commercial", 7: "Entrepôt",
+};
+const euro = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+function alertSummary(a) {
+  const parts = [];
+  if (a.city) parts.push(escapeHtml(a.city));
+  if (a.category_id) parts.push(CATEGORY_LABELS[a.category_id] || `Catégorie ${a.category_id}`);
+  if (a.min_price != null) parts.push(`≥ ${euro.format(a.min_price)}`);
+  if (a.max_price != null) parts.push(`≤ ${euro.format(a.max_price)}`);
+  if (a.min_area != null) parts.push(`≥ ${a.min_area} m²`);
+  if (a.max_energy) parts.push(`DPE ≤ ${a.max_energy}`);
+  return parts.length ? parts.join(" · ") : "Tous les biens";
+}
+
+function alertItem(a) {
+  return `
+    <li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex items-center justify-between gap-4">
+      <span class="text-sm">${alertSummary(a)}</span>
+      <button data-alert="${a.id}" class="alert-del text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-3 py-1.5 rounded-md transition-colors">Supprimer</button>
+    </li>`;
+}
+
+async function loadAlerts() {
+  const list = document.getElementById("alertes-list");
+  const empty = document.getElementById("alertes-empty");
+  try {
+    const { data } = await api.listAlerts();
+    document.getElementById("count-alertes").textContent = data.length;
+    list.innerHTML = data.map(alertItem).join("");
+    empty.classList.toggle("hidden", data.length > 0);
+
+    list.querySelectorAll(".alert-del").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try {
+          await api.deleteAlert(btn.dataset.alert);
+          loadAlerts();
+        } catch {
+          btn.disabled = false;
+          alert("Suppression impossible.");
+        }
+      })
+    );
+  } catch {
+    list.innerHTML = `<li class="text-slate2">Impossible de charger vos alertes.</li>`;
+  }
+}
+
+loadVisits();
+loadAlerts();
+
+// Refresh the account from the server (also validates the token: a 401 means
+// the session expired, so we send the user back to the login page).
+api.me()
+  .then((fresh) => {
+    document.getElementById("set-email").textContent = fresh.email || user.email || "";
+    document.getElementById("set-role").textContent = roleLabels[fresh.role] || fresh.role || "";
+  })
+  .catch((err) => {
+    if (err.status === 401) {
+      logout();
+      window.location.href = "./auth.html";
+    }
+  });

@@ -137,4 +137,41 @@ grid.addEventListener("click", async (e) => {
   btn.disabled = false;
 });
 
+// ----- Create a saved-search alert from the active filters -----
+const alertBtn = document.getElementById("create-alert");
+const alertMsg = document.getElementById("alert-msg");
+const showAlertMsg = (text, cls = "text-hibiscus") => {
+  alertMsg.textContent = text;
+  alertMsg.className = `mt-2 text-sm text-center ${cls}`;
+};
+alertBtn.addEventListener("click", async () => {
+  if (!isLoggedIn()) { window.location.href = "./auth.html"; return; }
+
+  // Map the search filters to the alert payload (no "sector" on alerts).
+  const payload = {};
+  if (filters.city) payload.city = filters.city;
+  if (filters.category_id) payload.category_id = Number(filters.category_id);
+  if (filters.min_price) payload.min_price = Number(filters.min_price);
+  if (filters.max_price) payload.max_price = Number(filters.max_price);
+  if (filters.max_energy) payload.max_energy = filters.max_energy;
+
+  if (Object.keys(payload).length === 0) {
+    showAlertMsg("Ajoutez au moins un critère avant de créer une alerte.");
+    return;
+  }
+
+  alertBtn.disabled = true;
+  try {
+    await api.createAlert(payload);
+    showAlertMsg("Alerte créée ! Retrouvez-la dans votre profil.", "text-green-700");
+  } catch (err) {
+    showAlertMsg(
+      err.status === 409 ? "Vous avez déjà une alerte identique."
+      : err.status === 400 ? "Critères invalides."
+      : "Création impossible pour le moment."
+    );
+  }
+  alertBtn.disabled = false;
+});
+
 runSearch();

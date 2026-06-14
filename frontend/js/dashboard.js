@@ -24,6 +24,7 @@ const panels = {
   overview: document.getElementById("panel-overview"),
   biens: document.getElementById("panel-biens"),
   planning: document.getElementById("panel-planning"),
+  ventes: document.getElementById("panel-ventes"),
 };
 function showTab(name) {
   Object.entries(panels).forEach(([key, el]) => el.classList.toggle("hidden", key !== name));
@@ -107,32 +108,230 @@ async function loadKpis() {
   }
 }
 
-// ----- Planning -----
+// ----- Planning: visits -----
+// As the agent, the workflow is: confirm a requested visit, mark it completed,
+// or cancel. (REQUESTED is not a valid manual transition — see visit_service.)
+function visitActions(v) {
+  const actions = [];
+  if (v.status === "REQUESTED") actions.push(["CONFIRMED", "Confirmer"]);
+  if (v.status === "CONFIRMED") actions.push(["COMPLETED", "Terminer"]);
+  if (v.status === "REQUESTED" || v.status === "CONFIRMED") actions.push(["CANCELLED", "Annuler"]);
+  return actions
+    .map(
+      ([status, label]) =>
+        `<button data-visit="${v.id}" data-status="${status}" class="visit-act text-xs font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-2.5 py-1 rounded-md transition-colors">${label}</button>`
+    )
+    .join(" ");
+}
 function visitItem(v) {
-  return `<li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex justify-between gap-4">
-      <span>Visite — bien #${v.property_id}</span>
-      <span class="text-slate2 text-sm">${dateFmt.format(new Date(v.scheduled_at))} · ${escapeHtml(v.status)}</span>
+  return `<li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex flex-wrap items-center justify-between gap-3">
+      <span>Visite — bien #${v.property_id} <span class="text-slate2 text-sm">· ${dateFmt.format(new Date(v.scheduled_at))} · ${escapeHtml(v.status)}</span></span>
+      <span class="flex gap-2">${visitActions(v)}</span>
     </li>`;
 }
+
+// ----- Planning: meetings -----
 function meetingItem(m) {
-  return `<li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex justify-between gap-4">
-      <span>${escapeHtml(m.title)}</span>
-      <span class="text-slate2 text-sm">${dateFmt.format(new Date(m.start_at))}</span>
+  return `<li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white flex items-center justify-between gap-4">
+      <span>${escapeHtml(m.title)} <span class="text-slate2 text-sm">· ${dateFmt.format(new Date(m.start_at))}</span></span>
+      <button data-meeting="${m.id}" class="meeting-del text-xs font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-2.5 py-1 rounded-md transition-colors">Supprimer</button>
     </li>`;
 }
+
 async function loadPlanning() {
+  const visitsList = document.getElementById("visits-list");
+  const meetingsList = document.getElementById("meetings-list");
   try {
     const [{ data: visits }, { data: meetings }] = await Promise.all([api.listVisits(), api.listMeetings()]);
-    document.getElementById("visits-list").innerHTML = visits.map(visitItem).join("");
+
+    visitsList.innerHTML = visits.map(visitItem).join("");
     document.getElementById("visits-empty").classList.toggle("hidden", visits.length > 0);
-    document.getElementById("meetings-list").innerHTML = meetings.map(meetingItem).join("");
+    visitsList.querySelectorAll(".visit-act").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try {
+          await api.updateVisit(btn.dataset.visit, btn.dataset.status);
+          loadPlanning();
+        } catch {
+          btn.disabled = false;
+          alert("Action sur la visite impossible.");
+        }
+      })
+    );
+
+    meetingsList.innerHTML = meetings.map(meetingItem).join("");
     document.getElementById("meetings-empty").classList.toggle("hidden", meetings.length > 0);
+    meetingsList.querySelectorAll(".meeting-del").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        if (!confirm("Supprimer cette réunion ?")) return;
+        try {
+          await api.deleteMeeting(btn.dataset.meeting);
+          loadPlanning();
+        } catch {
+          alert("Suppression impossible (seul l'organisateur peut supprimer).");
+        }
+      })
+    );
   } catch {
-    document.getElementById("visits-list").innerHTML = `<li class="text-slate2">Impossible de charger le planning.</li>`;
+    visitsList.innerHTML = `<li class="text-slate2">Impossible de charger le planning.</li>`;
   }
 }
+
+// Meeting creation form (toggle + submit).
+const meetingForm = document.getElementById("meeting-form");
+document.getElementById("meeting-toggle").addEventListener("click", () => meetingForm.classList.toggle("hidden"));
+meetingForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = document.getElementById("meeting-error");
+  err.classList.add("hidden");
+  const payload = {
+    title: document.getElementById("m-title").value.trim(),
+    agency_id: Number(document.getElementById("m-agency").value),
+    start_at: new Date(document.getElementById("m-start").value).toISOString(),
+    end_at: new Date(document.getElementById("m-end").value).toISOString(),
+  };
+  const loc = document.getElementById("m-location").value.trim();
+  if (loc) payload.location = loc;
+
+  try {
+    await api.createMeeting(payload);
+    meetingForm.reset();
+    meetingForm.classList.add("hidden");
+    loadPlanning();
+  } catch (e2) {
+    err.textContent = e2.status === 409 ? "Vous avez déjà une réunion à cette date." : "Création impossible (vérifiez les champs).";
+    err.classList.remove("hidden");
+  }
+});
+
+// ----- Sale files -----
+const SALE_STATUS = {
+  OFFER: ["Offre", "bg-gold/20 text-gold"],
+  PRELIMINARY_CONTRACT: ["Compromis", "bg-gold/20 text-gold"],
+  DEED: ["Acte", "bg-green-100 text-green-700"],
+  COMPLETED: ["Finalisée", "bg-hibiscus/15 text-hibiscus"],
+  CANCELLED: ["Annulée", "bg-slate2/20 text-slate2"],
+};
+// Sequential lifecycle: each status offers the next step (+ cancel).
+const SALE_NEXT = {
+  OFFER: "PRELIMINARY_CONTRACT",
+  PRELIMINARY_CONTRACT: "DEED",
+  DEED: "COMPLETED",
+};
+const SALE_NEXT_LABEL = {
+  PRELIMINARY_CONTRACT: "Passer au compromis",
+  DEED: "Passer à l'acte",
+  COMPLETED: "Finaliser la vente",
+};
+
+function saleActions(s) {
+  if (s.status === "COMPLETED" || s.status === "CANCELLED") return "";
+  const next = SALE_NEXT[s.status];
+  const btns = [];
+  if (next) btns.push(`<button data-sale="${s.id}" data-status="${next}" class="sale-act text-xs font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-2.5 py-1 rounded-md transition-colors">${SALE_NEXT_LABEL[next]}</button>`);
+  btns.push(`<button data-sale="${s.id}" data-status="CANCELLED" class="sale-act text-xs font-medium border border-slate2 text-slate2 hover:bg-slate2 hover:text-white px-2.5 py-1 rounded-md transition-colors">Annuler</button>`);
+  return btns.join(" ");
+}
+function saleItem(s) {
+  const [label, cls] = SALE_STATUS[s.status] || [s.status, "bg-slate2/20 text-slate2"];
+  const price = s.negotiated_price != null ? euro.format(s.negotiated_price) : "—";
+  return `<li class="border border-hibiscus/30 rounded-lg px-4 py-3 bg-white">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="font-semibold">Dossier #${s.id} · Bien #${s.property_id} → Acheteur #${s.buyer_id}</p>
+          <p class="text-sm text-slate2">Prix négocié : ${price}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full ${cls}">${label}</span>
+          <button data-sale-detail="${s.id}" class="sale-detail text-xs font-medium border border-slate2 text-slate2 hover:bg-slate2 hover:text-white px-2.5 py-1 rounded-md transition-colors">Détails</button>
+          ${saleActions(s)}
+        </div>
+      </div>
+      <p id="sale-detail-${s.id}" class="hidden text-sm text-slate2 mt-2 border-t border-hibiscus/20 pt-2"></p>
+    </li>`;
+}
+
+const dateOnly = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" });
+function saleDetailText(s) {
+  const fmt = (d) => (d ? dateOnly.format(new Date(d)) : "—");
+  return `Offre : ${fmt(s.offer_date)} · Compromis : ${fmt(s.contract_date)} · Acte : ${fmt(s.deed_date)}`;
+}
+
+async function loadSales() {
+  const list = document.getElementById("sales-list");
+  try {
+    const { data } = await api.listSales();
+    list.innerHTML = data.map(saleItem).join("");
+    document.getElementById("sales-empty").classList.toggle("hidden", data.length > 0);
+    list.querySelectorAll(".sale-act").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        try {
+          await api.updateSale(btn.dataset.sale, { status: btn.dataset.status });
+          loadSales();
+        } catch {
+          btn.disabled = false;
+          alert("Transition impossible (les étapes doivent être séquentielles).");
+        }
+      })
+    );
+
+    // Detail (GET /sales/:id) — fetch the full file on demand.
+    list.querySelectorAll(".sale-detail").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.saleDetail;
+        const row = document.getElementById(`sale-detail-${id}`);
+        if (!row.classList.contains("hidden")) {
+          row.classList.add("hidden");
+          return;
+        }
+        row.textContent = "Chargement…";
+        row.classList.remove("hidden");
+        try {
+          const s = await api.getSale(id);
+          row.textContent = saleDetailText(s);
+        } catch {
+          row.textContent = "Détails indisponibles.";
+        }
+      })
+    );
+  } catch {
+    list.innerHTML = `<li class="text-slate2">Impossible de charger les dossiers de vente.</li>`;
+  }
+}
+
+const saleForm = document.getElementById("sale-form");
+document.getElementById("sale-toggle").addEventListener("click", () => saleForm.classList.toggle("hidden"));
+saleForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const err = document.getElementById("sale-error");
+  err.classList.add("hidden");
+  const payload = {
+    property_id: Number(document.getElementById("s-property").value),
+    buyer_id: Number(document.getElementById("s-buyer").value),
+  };
+  const price = document.getElementById("s-price").value;
+  if (price) payload.negotiated_price = Number(price);
+  const offer = document.getElementById("s-offer").value;
+  if (offer) payload.offer_date = new Date(offer).toISOString();
+
+  try {
+    await api.createSale(payload);
+    saleForm.reset();
+    saleForm.classList.add("hidden");
+    loadSales();
+  } catch (e2) {
+    err.textContent =
+      e2.status === 404 ? "Bien ou acheteur introuvable."
+      : e2.status === 409 ? "Un dossier actif existe déjà pour ce bien."
+      : e2.status === 400 ? "Vérifiez l'acheteur (rôle BUYER) et la date."
+      : "Création impossible.";
+    err.classList.remove("hidden");
+  }
+});
 
 // ----- Boot -----
 loadProperties();
 loadKpis();
 loadPlanning();
+loadSales();

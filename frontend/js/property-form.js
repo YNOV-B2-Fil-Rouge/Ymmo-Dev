@@ -59,6 +59,7 @@ if (editId) {
     $("city").value = p.city || "";
     $("postal_code").value = p.postal_code || "";
     $("is_exclusive").checked = !!p.is_exclusive;
+    renderPhotos(p.photos || []);
   }).catch(() => showError("Impossible de charger ce bien."));
 
   $("delete-btn").addEventListener("click", async () => {
@@ -70,6 +71,70 @@ if (editId) {
       showError("Suppression impossible.");
     }
   });
+
+  // ----- Photos management -----
+  $("photos-section").classList.remove("hidden");
+
+  $("photo-add").addEventListener("click", async () => {
+    const url = $("photo-url").value.trim();
+    const err = $("photo-error");
+    err.classList.add("hidden");
+    if (!url) {
+      err.textContent = "Renseignez une URL d'image.";
+      err.classList.remove("hidden");
+      return;
+    }
+    try {
+      await api.addPhoto(editId, { url, is_primary: $("photo-primary").checked });
+      $("photo-url").value = "";
+      $("photo-primary").checked = false;
+      await reloadPhotos();
+    } catch (e) {
+      err.textContent = e.status === 400 ? "URL invalide (max 255 caractères)." : "Ajout impossible.";
+      err.classList.remove("hidden");
+    }
+  });
+}
+
+// Re-fetch the property just to refresh its photo list.
+async function reloadPhotos() {
+  try {
+    const p = await api.getProperty(editId);
+    renderPhotos(p.photos || []);
+  } catch {
+    /* keep current */
+  }
+}
+
+function renderPhotos(photos) {
+  const grid = $("photos-grid");
+  const empty = $("photos-empty");
+  const sorted = photos.slice().sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  empty.classList.toggle("hidden", sorted.length > 0);
+  grid.innerHTML = sorted
+    .map(
+      (ph) => `
+      <figure class="relative rounded-lg overflow-hidden border border-hibiscus/30 group">
+        <img src="${ph.url}" alt="Photo du bien" class="w-full h-28 object-cover" />
+        ${ph.is_primary ? `<figcaption class="absolute top-1 left-1 text-xs bg-gold text-white px-2 py-0.5 rounded-full">Principale</figcaption>` : ""}
+        <button type="button" data-photo="${ph.id}"
+          class="photo-del absolute top-1 right-1 w-7 h-7 rounded-full bg-white/90 text-hibiscus flex items-center justify-center shadow hover:bg-hibiscus hover:text-white transition-colors"
+          aria-label="Supprimer la photo">×</button>
+      </figure>`
+    )
+    .join("");
+
+  grid.querySelectorAll(".photo-del").forEach((btn) =>
+    btn.addEventListener("click", async () => {
+      if (!confirm("Supprimer cette photo ?")) return;
+      try {
+        await api.deletePhoto(editId, btn.dataset.photo);
+        await reloadPhotos();
+      } catch {
+        showError("Suppression de la photo impossible.");
+      }
+    })
+  );
 }
 
 // ---------- Helpers ----------

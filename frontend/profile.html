@@ -50,6 +50,12 @@
           <button data-tab="settings" class="profile-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">
             Paramètres du compte
           </button>
+          <button data-tab="visites" class="profile-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">
+            Mes visites (<span id="count-visites">0</span>)
+          </button>
+          <button data-tab="alertes" class="profile-tab w-full border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg transition-colors">
+            Mes alertes (<span id="count-alertes">0</span>)
+          </button>
           <a href="./messages.html" class="block w-full text-center border border-hibiscus text-hibiscus font-semibold py-3 rounded-lg hover:bg-hibiscus hover:text-white transition-colors">
             Messagerie
           </a>
@@ -62,6 +68,20 @@
         <div id="panel-biens" class="panel hidden">
           <h1 class="text-2xl font-bold mb-6">Mes biens :</h1>
           <p class="text-slate2">La gestion de vos biens arrivera bientôt.</p>
+        </div>
+
+        <!-- Mes visites -->
+        <div id="panel-visites" class="panel hidden">
+          <h1 class="text-2xl font-bold mb-6">Mes visites :</h1>
+          <ul id="visites-list" class="space-y-3"></ul>
+          <p id="visites-empty" class="hidden text-slate2">Vous n'avez aucune visite. Demandez-en une depuis une fiche bien.</p>
+        </div>
+
+        <!-- Mes alertes -->
+        <div id="panel-alertes" class="panel hidden">
+          <h1 class="text-2xl font-bold mb-6">Mes alertes :</h1>
+          <ul id="alertes-list" class="space-y-3"></ul>
+          <p id="alertes-empty" class="hidden text-slate2">Vous n'avez aucune alerte. Créez-en une depuis la recherche.</p>
         </div>
 
         <!-- Mes favoris -->

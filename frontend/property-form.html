@@ -106,6 +106,25 @@
         <button type="button" id="delete-btn" class="hidden border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white font-medium px-6 py-2.5 rounded-lg transition-colors">Supprimer</button>
       </div>
     </form>
+
+    <!-- Photos (edit mode only: a photo attaches to an existing property) -->
+    <section id="photos-section" class="hidden mt-10 border-t border-hibiscus/30 pt-6">
+      <h2 class="text-xl font-bold mb-4">Photos du bien</h2>
+      <div id="photos-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4"></div>
+      <p id="photos-empty" class="hidden text-slate2 mb-4">Aucune photo pour ce bien.</p>
+
+      <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
+        <div class="flex-1">
+          <label for="photo-url" class="block text-hibiscus font-semibold text-sm mb-1">URL de la photo</label>
+          <input id="photo-url" type="url" placeholder="https://…" class="ym-input" />
+        </div>
+        <label class="flex items-center gap-2 text-sm whitespace-nowrap">
+          <input id="photo-primary" type="checkbox" class="w-4 h-4 accent-hibiscus" /> Photo principale
+        </label>
+        <button type="button" id="photo-add" class="bg-hibiscus hover:bg-hibiscus/90 text-white font-medium px-5 py-2.5 rounded-lg transition-colors">Ajouter</button>
+      </div>
+      <p id="photo-error" class="hidden text-sm text-hibiscus mt-2" role="alert"></p>
+    </section>
   </main>
 
   <style>

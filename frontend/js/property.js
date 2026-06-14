@@ -99,12 +99,68 @@ function render(property) {
         class="mt-3 w-full border border-hibiscus text-hibiscus hover:bg-hibiscus/10 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2">
         ${heartIcon(false)}<span class="fav-label">Ajouter aux favoris</span>
       </button>
+
+      <!-- Visit request -->
+      <div class="mt-3 border border-hibiscus/30 rounded-lg p-4 bg-white">
+        <label for="visit-date" class="block text-sm font-semibold text-hibiscus mb-1">Demander une visite</label>
+        <input id="visit-date" type="datetime-local"
+               class="w-full rounded-md border border-hibiscus/60 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" />
+        <input id="visit-notes" type="text" maxlength="500" placeholder="Message à l'agent (optionnel)"
+               class="mt-2 w-full rounded-md border border-hibiscus/60 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-hibiscus/30" />
+        <button id="visit-btn" class="mt-2 w-full border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white font-medium py-2.5 rounded-lg transition-colors">
+          Demander une visite
+        </button>
+        <p id="visit-msg" class="hidden mt-2 text-sm text-center" role="status"></p>
+      </div>
     </div>`;
 
   wireGallery();
   loadAiInsight(property);
   wireContact(property);
   wireFavorite(property);
+  wireVisit(property);
+}
+
+// Request a visit for this property. The API restricts this to client roles
+// (a buyer/seller, not staff, and not your own listing); we surface its
+// rejection as a friendly message rather than hiding the control.
+function wireVisit(property) {
+  const btn = document.getElementById("visit-btn");
+  const dateEl = document.getElementById("visit-date");
+  const notesEl = document.getElementById("visit-notes");
+  const msg = document.getElementById("visit-msg");
+
+  const show = (text, cls = "text-hibiscus") => {
+    msg.textContent = text;
+    msg.className = `mt-2 text-sm text-center ${cls}`;
+  };
+
+  btn.addEventListener("click", async () => {
+    if (!isLoggedIn()) {
+      window.location.href = "./auth.html";
+      return;
+    }
+    if (!dateEl.value) {
+      show("Choisissez une date et une heure.");
+      return;
+    }
+    btn.disabled = true;
+    try {
+      await api.requestVisit(property.id, {
+        scheduled_at: new Date(dateEl.value).toISOString(), // RFC3339
+        notes: notesEl.value.trim() || undefined,
+      });
+      show("Demande envoyée ! Un agent confirmera le créneau.", "text-green-700");
+    } catch (err) {
+      const m =
+        err.status === 403 ? "Vous ne pouvez pas demander de visite pour ce bien."
+        : err.status === 409 ? "Vous avez déjà une visite prévue à cette date."
+        : err.status === 400 || err.status === 422 ? "Date invalide (créneau passé ?)."
+        : "Impossible d'envoyer la demande pour le moment.";
+      show(m);
+      btn.disabled = false;
+    }
+  });
 }
 
 // Favorite toggle on the detail page.

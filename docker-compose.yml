@@ -77,6 +77,19 @@ services:
     expose:
       - "8000"
 
+  # ---------- Front-end (static, served by nginx) ----------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ymmo-front
+    restart: unless-stopped
+    depends_on:
+      - api # not a hard dependency (the browser calls the API), just ordering
+    ports:
+      # Browse the app at http://localhost:3000
+      - "3000:80"
+
 volumes:
   db_data:
     # Explicit name so the volume is stable regardless of the project folder

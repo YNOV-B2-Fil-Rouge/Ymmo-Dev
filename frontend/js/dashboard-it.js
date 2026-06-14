@@ -1,6 +1,6 @@
 // IT dashboard: user management, the access-rights matrix, monitoring and the
 // collaborator directory.
-import { api } from "./api.js";
+import { api, ai } from "./api.js";
 import { CONFIG } from "./config.js";
 import { currentUser, isLoggedIn } from "./auth.js";
 
@@ -105,17 +105,44 @@ async function loadMonitoring() {
     dbOk = j.database === "up";
   } catch { /* down */ }
   // Python AI service.
+  // The AI service is internal-only (not exposed on localhost), so we probe it
+  // THROUGH the Go proxy: a successful KPI call means the AI is reachable.
   let aiOk = false;
   try {
-    const r = await fetch(`${CONFIG.AI_BASE}/health`);
-    aiOk = r.ok;
-  } catch { /* down */ }
+    await ai.dashboardKpis();
+    aiOk = true;
+  } catch (e) {
+    // A 502 from the proxy means the AI is down; any other answer means it
+    // replied (so it's up). Only a network failure leaves aiOk false.
+    aiOk = Boolean(e && e.status && e.status !== 502);
+  }
 
   grid.innerHTML = [
     statusCard("API Go", apiOk),
     statusCard("Base de données", dbOk),
-    statusCard("Service IA (Python)", aiOk),
+    statusCard("Service IA (Python, interne)", aiOk),
   ].join("");
+}
+
+// ----- Technical links: Swagger + /ping -----
+function wireTechLinks() {
+  const apiRoot = CONFIG.API_BASE.replace("/api/v1", "");
+  document.getElementById("swagger-link").href = `${apiRoot}/swagger/index.html`;
+
+  const btn = document.getElementById("ping-btn");
+  const out = document.getElementById("ping-result");
+  btn.addEventListener("click", async () => {
+    out.textContent = "…";
+    out.className = "text-sm self-center text-slate2";
+    try {
+      const r = await api.ping(); // GET /api/v1/ping -> { message: "pong" }
+      out.textContent = `✔ ${r.message}`;
+      out.className = "text-sm self-center text-green-700";
+    } catch {
+      out.textContent = "✖ API injoignable";
+      out.className = "text-sm self-center text-hibiscus";
+    }
+  });
 }
 
 // ----- Collaborators -----
@@ -136,3 +163,4 @@ loadUsers();
 loadMatrix();
 loadMonitoring();
 loadCollaborators();
+wireTechLinks();
