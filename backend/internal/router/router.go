@@ -29,13 +29,20 @@ func New(cfg *config.Config, db *gorm.DB) *gin.Engine {
 
 	r.Use(gin.Logger(), gin.Recovery())
 
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://localhost"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	// Auth uses Bearer tokens (no cookies), so credentials aren't needed and we can
+	// allow any origin by default. With the nginx reverse proxy the front is anyway
+	// same-origin; set CORS_ALLOWED_ORIGINS to restrict it in a stricter setup.
+	corsCfg := cors.Config{
+		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
+		MaxAge:       12 * time.Hour,
+	}
+	if len(cfg.CORSOrigins) > 0 {
+		corsCfg.AllowOrigins = cfg.CORSOrigins
+	} else {
+		corsCfg.AllowAllOrigins = true
+	}
+	r.Use(cors.New(corsCfg))
 
 	health := handlers.NewHealthHandler(db)
 	r.GET("/health", health.Check)

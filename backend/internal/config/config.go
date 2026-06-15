@@ -4,6 +4,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -15,6 +16,7 @@ type Config struct {
 	AIBaseURL  string
 	UploadDir  string
 	PublicURL  string
+	CORSOrigins []string // empty => allow all origins (same-origin via the front proxy)
 
 	DB DBConfig
 }
@@ -46,7 +48,8 @@ func Load() (*Config, error) {
 		// Empty by default => photo URLs are relative ("/uploads/..."), served
 		// same-origin through the front nginx proxy. Set PUBLIC_API_URL only if
 		// the API is reached on a different host than the front-end.
-		PublicURL: getEnv("PUBLIC_API_URL", ""),
+		PublicURL:   getEnv("PUBLIC_API_URL", ""),
+		CORSOrigins: splitCSV(getEnv("CORS_ALLOWED_ORIGINS", "")),
 		DB: DBConfig{
 			Host:     getEnv("DB_HOST", "127.0.0.1"),
 			Port:     getEnv("DB_PORT", "3306"),
@@ -61,6 +64,17 @@ func Load() (*Config, error) {
 	}
 
 	return cfg, nil
+}
+
+// splitCSV turns "a, b ,c" into ["a","b","c"], ignoring empty entries.
+func splitCSV(v string) []string {
+	var out []string
+	for _, p := range strings.Split(v, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func getEnv(key, fallback string) string {
