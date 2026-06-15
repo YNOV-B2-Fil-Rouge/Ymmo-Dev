@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ymmo - Détail du bien</title>
+  <link rel="icon" type="image/png" href="./img/logo.png" />
+  <meta name="description" content="Détail d'un bien immobilier Ymmo." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/tailwind-config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au contenu</a>
+
+  <header class="bg-alyssum border-b-2 border-hibiscus">
+    <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between" aria-label="Navigation principale">
+      <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
+        <img src="./img/logo-title.png" alt="Ymmo" class="h-12 w-auto" />
+      </a>
+
+      <div class="flex items-center gap-4">
+        <a href="./index.html" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">
+          Retourner aux résultats
+        </a>
+        <span id="nav-account" class="flex items-center gap-3"></span>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main" class="flex-1 max-w-6xl mx-auto w-full px-4 py-8">
+    <div id="detail" class="grid lg:grid-cols-2 gap-8">
+      <div class="animate-pulse">
+        <div class="h-96 bg-slate2/20 rounded-xl"></div>
+        <div class="grid grid-cols-4 gap-3 mt-3">
+          <div class="h-24 bg-slate2/20 rounded-lg"></div><div class="h-24 bg-slate2/20 rounded-lg"></div>
+          <div class="h-24 bg-slate2/20 rounded-lg"></div><div class="h-24 bg-slate2/20 rounded-lg"></div>
+        </div>
+      </div>
+      <div class="animate-pulse space-y-4">
+        <div class="h-4 bg-slate2/20 rounded w-1/3"></div>
+        <div class="h-8 bg-slate2/20 rounded w-2/3"></div>
+        <div class="h-6 bg-slate2/20 rounded w-1/4"></div>
+        <div class="h-20 bg-slate2/20 rounded"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="bg-midnight text-white/70">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-center text-sm">
+      Ymmo — Immobilier © <span id="year"></span>
+    </div>
+  </footer>
+
+  <script type="module" src="./js/property.js"></script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+# nginx.conf is copied explicitly in the Dockerfile, so it must stay in the
+# build context. These files are simply never needed inside the image.
+Dockerfile
+.dockerignore
+README.md

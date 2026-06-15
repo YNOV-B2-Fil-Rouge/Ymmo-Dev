@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ymmo - Immobilier</title>
+  <link rel="icon" type="image/png" href="./img/logo.png" />
+  <meta name="description" content="Ymmo, réseau d'agences immobilières. Achat et vente de biens résidentiels et professionnels." />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="./js/tailwind-config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body class="bg-alyssum text-midnight font-sans antialiased min-h-screen flex flex-col">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-hibiscus focus:text-white focus:px-4 focus:py-2 focus:rounded">Aller au contenu</a>
+
+  <header class="bg-alyssum border-b-2 border-hibiscus">
+    <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between" aria-label="Navigation principale">
+      <a href="./index.html" class="flex items-center gap-2 text-midnight" aria-label="Accueil Ymmo">
+        <img src="./img/logo-title.png" alt="Ymmo" class="h-12 w-auto" />
+      </a>
+
+      <div id="nav-account" class="flex items-center gap-4">
+        <a href="./auth.html" class="text-sm font-medium text-midnight hover:text-hibiscus transition-colors">Connexion</a>
+        <a href="./auth.html#register" class="text-sm font-medium border border-hibiscus text-hibiscus hover:bg-hibiscus hover:text-white px-4 py-1.5 rounded-md transition-colors">Inscription</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main" class="flex-1">
+    <section class="relative">
+      <div class="h-64 sm:h-80 bg-midnight bg-cover bg-center"
+           style="background-image:url('./img/hero.jpg')"
+           role="img" aria-label="Maison de prestige avec piscine"></div>
+
+      <div class="absolute inset-x-0 -bottom-7 flex justify-center px-4">
+        <form id="search-form" class="w-full max-w-2xl flex items-center gap-2 bg-white rounded-full border border-slate2/30 shadow-lg pl-6 pr-2 py-2" role="search">
+          <label for="search-input" class="sr-only">Rechercher un bien</label>
+          <input id="search-input" name="q" type="search" placeholder="Rechercher avec une ville, un code postal, une région …"
+            class="flex-1 bg-transparent text-sm focus:outline-none placeholder-slate2" />
+          <button type="submit" class="w-10 h-10 shrink-0 rounded-full border border-hibiscus text-hibiscus flex items-center justify-center hover:bg-hibiscus hover:text-white transition-colors" aria-label="Lancer la recherche">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <section class="max-w-6xl mx-auto px-4 pt-16 pb-16" aria-labelledby="catalogue-title">
+      <h1 id="catalogue-title" class="sr-only">Catalogue des biens</h1>
+
+      <div id="catalogue" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      </div>
+
+      <p id="empty" class="hidden text-center text-slate2 py-10">Aucun bien ne correspond à votre recherche.</p>
+    </section>
+  </main>
+
+  <footer class="bg-midnight text-white/70">
+    <div class="max-w-6xl mx-auto px-4 py-6 text-center text-sm">
+      Ymmo — Immobilier © <span id="year"></span>
+    </div>
+  </footer>
+
+  <script type="module" src="./js/home.js"></script>
+</body>
+</html>

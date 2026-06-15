@@ -1,0 +1,577 @@
+### Ymmo API — manual test suite
+### Use with the VS Code "REST Client" extension: click "Send Request"
+### above each block. Run the seed (db/seed.sql) first so data exists.
+
+@baseUrl = http://localhost:8080
+
+### --- 0. Health -------------------------------------------------------
+GET {{baseUrl}}/health
+
+### =====================================================================
+### AUTH
+### =====================================================================
+
+### 1. Register a new buyer (expect 201)
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "new.buyer@ymmo.fr",
+  "password": "motdepasse123",
+  "first_name": "Camille",
+  "last_name": "Durand"
+}
+
+### 2. Register again with same email (expect 409 Conflict)
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "new.buyer@ymmo.fr",
+  "password": "motdepasse123",
+  "first_name": "Camille",
+  "last_name": "Durand"
+}
+
+### 3. Register with invalid input (expect 400 — bad email + short password)
+POST {{baseUrl}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "password": "123",
+  "first_name": "X",
+  "last_name": "Y"
+}
+
+### 4. Login as AGENT (captures the token for the next requests)
+# @name login
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "agent@ymmo.fr",
+  "password": "agent1234"
+}
+
+### 5. Login with wrong password (expect 401)
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "agent@ymmo.fr",
+  "password": "wrongpassword"
+}
+
+### 6. Me — with the agent token (expect 200 + agent profile)
+GET {{baseUrl}}/api/v1/auth/me
+Authorization: Bearer {{login.response.body.token}}
+
+### 7. Me — without a token (expect 401)
+GET {{baseUrl}}/api/v1/auth/me
+
+### =====================================================================
+### PROPERTIES — public
+### =====================================================================
+
+### 8. List all available properties (expect 4 seeded, DRAFT hidden)
+GET {{baseUrl}}/api/v1/properties
+
+### 9. Filter by city
+GET {{baseUrl}}/api/v1/properties?city=Paris
+
+### 10. Filter by price + sort ascending
+GET {{baseUrl}}/api/v1/properties?max_price=500000&sort=price_asc
+
+### 11. Filter by sector (RESIDENTIAL only)
+GET {{baseUrl}}/api/v1/properties?sector=RESIDENTIAL
+
+### 12. Filter by energy rating D or better
+GET {{baseUrl}}/api/v1/properties?max_energy=D
+
+### 13. Pagination (2 per page, page 1)
+GET {{baseUrl}}/api/v1/properties?page_size=2&page=1
+
+### 14. Get one property by id (expect 200 + view_count increment)
+GET {{baseUrl}}/api/v1/properties/1
+
+### 15. Get a non-existing property (expect 404)
+GET {{baseUrl}}/api/v1/properties/9999
+
+### =====================================================================
+### PROPERTIES — protected (staff only)
+### =====================================================================
+
+### 16. Create a property WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/properties
+Content-Type: application/json
+
+{
+  "title": "Test sans token",
+  "category_id": 2,
+  "price": 300000,
+  "area": 60,
+  "city": "Nice",
+  "postal_code": "06000",
+  "agency_id": 1
+}
+
+### 17. Create a property AS AGENT (expect 201, status DRAFT, auto reference)
+POST {{baseUrl}}/api/v1/properties
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "title": "Appartement T2 rénové",
+  "description": "Refait à neuf, proche commerces",
+  "category_id": 2,
+  "price": 295000,
+  "area": 48,
+  "rooms": 2,
+  "bedrooms": 1,
+  "energy_rating": "C",
+  "city": "Nice",
+  "postal_code": "06000",
+  "agency_id": 1
+}
+
+### 18. Create with invalid input (expect 400 — missing title, price <= 0)
+POST {{baseUrl}}/api/v1/properties
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "category_id": 2,
+  "price": 0,
+  "area": 48,
+  "city": "Nice",
+  "postal_code": "06000",
+  "agency_id": 1
+}
+
+### 19. Update a property (expect 200 — partial update)
+PUT {{baseUrl}}/api/v1/properties/2
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{
+  "price": 630000,
+  "status": "AVAILABLE"
+}
+
+### 20. Delete a property (expect 204)
+DELETE {{baseUrl}}/api/v1/properties/3
+Authorization: Bearer {{login.response.body.token}}
+
+### =====================================================================
+### RBAC — a BUYER must NOT manage properties
+### =====================================================================
+
+### 21. Login as BUYER
+# @name loginBuyer
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "buyer@ymmo.fr",
+  "password": "buyer1234"
+}
+
+### 22. Buyer tries to create a property (expect 403 Forbidden)
+POST {{baseUrl}}/api/v1/properties
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{
+  "title": "Tentative interdite",
+  "category_id": 2,
+  "price": 200000,
+  "area": 40,
+  "city": "Lille",
+  "postal_code": "59000",
+  "agency_id": 1
+}
+
+### =====================================================================
+### FAVORITES — any authenticated user (here: the buyer)
+### =====================================================================
+
+### 23. Add a favorite WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/properties/1/favorites
+
+### 24. Add a favorite as buyer (expect 204)
+POST {{baseUrl}}/api/v1/properties/1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 25. Add the SAME favorite again (idempotent, expect 204 — no duplicate error)
+POST {{baseUrl}}/api/v1/properties/1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 26. Favorite a non-existing property (expect 404)
+POST {{baseUrl}}/api/v1/properties/9999/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 27. List my favorites (expect 200, contains property 1)
+GET {{baseUrl}}/api/v1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 28. Remove the favorite (expect 204)
+DELETE {{baseUrl}}/api/v1/properties/1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 29. List again (expect 200, now empty)
+GET {{baseUrl}}/api/v1/favorites
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### =====================================================================
+### PHOTOS — staff only (use the AGENT token from request #4)
+### =====================================================================
+
+### 30. Add a photo WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/properties/1/photos
+Content-Type: application/json
+
+{ "url": "https://placehold.co/800x600", "is_primary": true }
+
+### 31. Add a photo as BUYER (expect 403 — not staff)
+POST {{baseUrl}}/api/v1/properties/1/photos
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "url": "https://placehold.co/800x600", "is_primary": true }
+
+### 32. Add a photo as AGENT (expect 201) — captures the new photo id
+# @name addPhoto
+POST {{baseUrl}}/api/v1/properties/1/photos
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "url": "https://placehold.co/800x600?text=New", "is_primary": true }
+
+### 33. Add a photo with an invalid URL (expect 400)
+POST {{baseUrl}}/api/v1/properties/1/photos
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "url": "not-a-url" }
+
+### 34. Add a photo to a missing property (expect 404)
+POST {{baseUrl}}/api/v1/properties/9999/photos
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "url": "https://placehold.co/800x600" }
+
+### 35. Check the photo shows up on the property (expect it in "photos")
+GET {{baseUrl}}/api/v1/properties/1
+
+### 36. Delete the photo just added as AGENT (expect 204)
+DELETE {{baseUrl}}/api/v1/properties/1/photos/{{addPhoto.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### 37. Delete a non-existing photo (expect 404)
+DELETE {{baseUrl}}/api/v1/properties/1/photos/999999
+Authorization: Bearer {{login.response.body.token}}
+
+### =====================================================================
+### MESSAGING — client (buyer) <-> agent (id 1)
+### =====================================================================
+
+### 38. Login as DIRECTOR (a third party, for the access-control test)
+# @name loginDirector
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{ "email": "director@ymmo.fr", "password": "director1234" }
+
+### 39. Buyer starts a conversation with the agent about property 1 (expect 201)
+# @name startConv
+POST {{baseUrl}}/api/v1/conversations
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "agent_id": 1, "property_id": 1 }
+
+### 40. Start the SAME conversation again (idempotent — same id, no duplicate)
+POST {{baseUrl}}/api/v1/conversations
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "agent_id": 1, "property_id": 1 }
+
+### 41. Buyer sends a message (expect 201)
+POST {{baseUrl}}/api/v1/conversations/{{startConv.response.body.id}}/messages
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "body": "Bonjour, ce bien est-il toujours disponible ?" }
+
+### 42. Send a message WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/conversations/{{startConv.response.body.id}}/messages
+Content-Type: application/json
+
+{ "body": "test" }
+
+### 43. DIRECTOR (not a participant) tries to read the thread (expect 403)
+GET {{baseUrl}}/api/v1/conversations/{{startConv.response.body.id}}/messages
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### 44. Agent's unread count (expect 1)
+GET {{baseUrl}}/api/v1/messages/unread-count
+Authorization: Bearer {{login.response.body.token}}
+
+### 45. Agent reads the thread (marks messages as read)
+GET {{baseUrl}}/api/v1/conversations/{{startConv.response.body.id}}/messages
+Authorization: Bearer {{login.response.body.token}}
+
+### 46. Agent's unread count again (expect 0)
+GET {{baseUrl}}/api/v1/messages/unread-count
+Authorization: Bearer {{login.response.body.token}}
+
+### 47. Agent lists their conversations (expect the thread)
+GET {{baseUrl}}/api/v1/conversations
+Authorization: Bearer {{login.response.body.token}}
+
+### 48. Send to a non-existing conversation (expect 404)
+POST {{baseUrl}}/api/v1/conversations/999999/messages
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "body": "test" }
+
+### =====================================================================
+### VISITS — client requests, agent manages
+### =====================================================================
+
+### 49. Request a visit WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/properties/1/visits
+Content-Type: application/json
+
+{ "scheduled_at": "2026-12-01T15:00:00Z" }
+
+### 50. Buyer requests a visit of property 1 (expect 201) — captures the visit id
+# @name requestVisit
+POST {{baseUrl}}/api/v1/properties/1/visits
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "scheduled_at": "2026-12-01T15:00:00Z", "notes": "Disponible l'apres-midi" }
+
+### 51. Request a visit in the PAST (expect 400)
+POST {{baseUrl}}/api/v1/properties/1/visits
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "scheduled_at": "2020-01-01T10:00:00Z" }
+
+### 52. Request a visit on a missing property (expect 404)
+POST {{baseUrl}}/api/v1/properties/9999/visits
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "scheduled_at": "2026-12-01T15:00:00Z" }
+
+### 53. Buyer lists their visits (expect the visit, status REQUESTED)
+GET {{baseUrl}}/api/v1/visits
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 54. Agent confirms the visit (expect 200, status CONFIRMED)
+PATCH {{baseUrl}}/api/v1/visits/{{requestVisit.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "status": "CONFIRMED" }
+
+### 55. Director (not a participant) tries to update it (expect 403)
+PATCH {{baseUrl}}/api/v1/visits/{{requestVisit.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{ "status": "CANCELLED" }
+
+### 56. Update with an invalid status (expect 400)
+PATCH {{baseUrl}}/api/v1/visits/{{requestVisit.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "status": "BANANA" }
+
+### =====================================================================
+### MEETINGS — organizer = director, participant = agent (id 1)
+### =====================================================================
+
+### 57. Create a meeting WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+
+{ "agency_id": 1, "title": "Reunion equipe", "start_at": "2026-12-01T09:00:00Z", "end_at": "2026-12-01T10:00:00Z" }
+
+### 58. Create a meeting as BUYER (expect 403 — staff only)
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "agency_id": 1, "title": "Reunion equipe", "start_at": "2026-12-01T09:00:00Z", "end_at": "2026-12-01T10:00:00Z" }
+
+### 59. Create a meeting as DIRECTOR with the agent as participant (expect 201)
+# @name createMeeting
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{
+  "agency_id": 1,
+  "title": "Point hebdo agence",
+  "description": "Suivi des dossiers en cours",
+  "start_at": "2026-12-01T09:00:00Z",
+  "end_at": "2026-12-01T10:00:00Z",
+  "location": "Salle A",
+  "participant_ids": [1]
+}
+
+### 60. Create with end BEFORE start (expect 400)
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{ "agency_id": 1, "title": "Horaire invalide", "start_at": "2026-12-01T10:00:00Z", "end_at": "2026-12-01T09:00:00Z" }
+
+### 61. Create with a PAST start (expect 400)
+POST {{baseUrl}}/api/v1/meetings
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{ "agency_id": 1, "title": "Dans le passe", "start_at": "2020-01-01T09:00:00Z", "end_at": "2020-01-01T10:00:00Z" }
+
+### 62. Director lists their meetings (expect the meeting, with participants)
+GET {{baseUrl}}/api/v1/meetings
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### 63. Agent (a participant) lists their meetings (expect the same meeting)
+GET {{baseUrl}}/api/v1/meetings
+Authorization: Bearer {{login.response.body.token}}
+
+### 64. Agent (not the organizer) tries to delete it (expect 403)
+DELETE {{baseUrl}}/api/v1/meetings/{{createMeeting.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### 65. Director (organizer) deletes it (expect 204)
+DELETE {{baseUrl}}/api/v1/meetings/{{createMeeting.response.body.id}}
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### 66. Delete a non-existing meeting (expect 404)
+DELETE {{baseUrl}}/api/v1/meetings/999999
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### =====================================================================
+### ALERTS — saved searches (any authenticated user)
+### =====================================================================
+
+### 67. Create an alert WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/alerts
+Content-Type: application/json
+
+{ "city": "Paris", "max_price": 500000 }
+
+### 68. Buyer creates an alert (expect 201) — captures the alert id
+# @name createAlert
+POST {{baseUrl}}/api/v1/alerts
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "city": "Paris", "category_id": 2, "min_price": 200000, "max_price": 500000, "max_energy": "D" }
+
+### 69. Create an alert with an invalid energy class (expect 400)
+POST {{baseUrl}}/api/v1/alerts
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "city": "Lyon", "max_energy": "Z" }
+
+### 70. Buyer lists their alerts (expect the alert)
+GET {{baseUrl}}/api/v1/alerts
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 71. Agent (not the owner) tries to delete the buyer's alert (expect 403)
+DELETE {{baseUrl}}/api/v1/alerts/{{createAlert.response.body.id}}
+Authorization: Bearer {{login.response.body.token}}
+
+### 72. Buyer (owner) deletes their alert (expect 204)
+DELETE {{baseUrl}}/api/v1/alerts/{{createAlert.response.body.id}}
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 73. Delete a non-existing alert (expect 404)
+DELETE {{baseUrl}}/api/v1/alerts/999999
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### =====================================================================
+### SALE FILES — agent opens & advances, participants read
+### (buyer = user 3, agent = user 1, director = user 2)
+### =====================================================================
+
+### 74. Create a sale WITHOUT token (expect 401)
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+
+{ "property_id": 1, "buyer_id": 3 }
+
+### 75. Create a sale as BUYER (expect 403 — staff only)
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+{ "property_id": 1, "buyer_id": 3 }
+
+### 76. Create a sale as AGENT (expect 201) — captures the sale id
+# @name createSale
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "property_id": 1, "buyer_id": 3, "negotiated_price": 460000, "offer_date": "2026-06-15T00:00:00Z" }
+
+### 77. Create with a missing property (expect 404)
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "property_id": 9999, "buyer_id": 3 }
+
+### 78. Create with a missing buyer (expect 404)
+POST {{baseUrl}}/api/v1/sales
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "property_id": 1, "buyer_id": 9999 }
+
+### 79. Buyer (participant) reads the sale (expect 200)
+GET {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Authorization: Bearer {{loginBuyer.response.body.token}}
+
+### 80. Director (not a participant) reads it (expect 403)
+GET {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+### 81. Director (staff, but not the sale's agent) tries to advance it (expect 403)
+PATCH {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{loginDirector.response.body.token}}
+
+{ "status": "PRELIMINARY_CONTRACT" }
+
+### 82. Agent advances the sale to "compromis" (expect 200)
+PATCH {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "status": "PRELIMINARY_CONTRACT", "contract_date": "2026-07-01T00:00:00Z" }
+
+### 83. Agent completes the sale (expect 200) — property becomes SOLD
+PATCH {{baseUrl}}/api/v1/sales/{{createSale.response.body.id}}
+Content-Type: application/json
+Authorization: Bearer {{login.response.body.token}}
+
+{ "status": "COMPLETED", "deed_date": "2026-09-01T00:00:00Z" }
+
+### 84. The linked property is now SOLD (check status — and it leaves the public catalogue)
+GET {{baseUrl}}/api/v1/properties/1
